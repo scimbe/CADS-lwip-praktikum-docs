@@ -39,8 +39,11 @@ lesen; die Links in den Versuchsbeschreibungen zeigen dorthin.
 
 1. Im GitLab das Projekt `cads-zero-firmware` in euren Namespace forken
    (einmal zu Beginn, siehe [Onboarding](../labs/00-onboarding.md)).
-2. Im Firmware-Labor den eigenen Fork klonen und `praktikum/start`
-   auschecken.
+2. Ab Semesterstart öffnet das Firmware-Labor den Arbeitsbereich mit
+   `praktikum/start` bereits fertig (samt Submodulen und Tasks), klonen ist
+   nicht nötig. Bis dahin verbindet ihr den vorbereiteten Arbeitsbereich
+   selbst mit eurem Fork, siehe
+   [Onboarding, Schritt 2](../labs/00-onboarding.md#2-arbeitsbereich-und-eigener-fork).
 3. Je Versuch committen und pushen; die Stellen, an denen ihr Code ergänzt,
    sind im Quelltext mit `TODO(LNN)` markiert (z. B. `TODO(L03)`).
 
@@ -50,8 +53,13 @@ Im Terminal des code-servers:
 
 ```bash
 # Host-Tests eines Versuchs (reine Logik, ohne Board)
-ctest --test-dir build/host -L rnlab-L03
+ctest --test-dir build/host -L '^rnlab-L03$'
 ```
+
+Ab Semesterstart gibt es dafür Tasks: **CaDS: Host tests (Rahmen)** für die
+Tests des Rahmens und **CaDS: Lektionstests** für die Tests eines Versuchs
+(fragt nach der Nummer). Heute heißt die Task noch **CaDS: Host tests** und
+lässt die Lektionstests mitlaufen.
 
 Die Lektions-Tests sind auf `praktikum/start` absichtlich **rot**: sie werden
 grün, sobald eure Implementierung stimmt. Die genauen Build- und

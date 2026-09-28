@@ -84,22 +84,33 @@ Anmeldung prüft das Portal, ob das Image für eure Gruppe freigegeben ist.
 Bis dahin gilt der Zugang, den ihr von der Betreuung bekommt. Details stehen in
 [Firmware-Labor-Image](../reference/firmware-lab-image.md#image-wahlen-und-anmelden).
 
-### 2. Eigenen Fork anlegen und auschecken
+### 2. Arbeitsbereich und eigener Fork
 
-1. Im GitLab der Hochschule das Projekt `cads-zero` **forken** (einmalig).
-2. Im Image ein Terminal öffnen (*☰ → Terminal → New Terminal*) und euren Fork
-   mit dem Branch `praktikum/start` holen:
+Ab Semesterstart öffnet das Image den Arbeitsbereich `cads-zero` mit dem
+Stand `praktikum/start` der Firmware bereits fertig, samt Submodulen und
+vorbereiteten Tasks – ihr müsst nichts klonen. Eure Änderungen gehören in
+euren eigenen Fork **`cads-zero-firmware`** im GitLab der Hochschule:
+
+1. Im GitLab das Projekt `cads-zero-firmware` in euren Namespace **forken**
+   (einmalig).
+2. Ab Semesterstart ist der Arbeitsbereich im Image direkt euer Fork. Bis
+   dahin – oder falls `git remote -v` noch nicht euren Fork zeigt – verbindet
+   ihr den vorbereiteten Arbeitsbereich selbst mit eurem Fork
+   (*☰ → Terminal → New Terminal*):
 
     ```bash
-    cd ~/workspace
-    git clone <HTTPS-Adresse eures Forks> cads-zero-fork
-    cd cads-zero-fork
-    git switch praktikum/start
-    git submodule update --init --recursive   # lwIP und littlefs
+    git remote -v                                   # zeigt, wohin origin zeigt
+    git remote rename origin vorlage
+    git remote add origin <HTTPS-Adresse eures Forks>
+    git fetch origin
+    git switch praktikum/start 2>/dev/null || git switch -c praktikum/start --track origin/praktikum/start
+    git branch --set-upstream-to=origin/praktikum/start
+    git submodule update --init --recursive        # lwIP und littlefs
     ```
 
-    Die Anmeldung am GitLab übernimmt das Single-Sign-on des Images. Öffnet den
-    Ordner anschließend als Arbeitsbereich (*☰ → File → Open Folder…*).
+    Der Arbeitsbereich behält dabei Stand, Build und Tasks; nur das Ziel von
+    `git push` ändert sich. Den Fork in einen anderen Ordner zu klonen geht
+    auch, dort fehlen aber die vorbereiteten Tasks des Images.
 
 3. Ab jetzt je Versuch committen und pushen; eure Stellen im Quelltext sind mit
    `TODO(LNN)` markiert (z. B. `TODO(L01)`).
@@ -115,19 +126,26 @@ cmake --preset itsboard && cmake --build build/itsboard
 ```
 
 Das Ergebnis liegt in `build/itsboard/cads-zero.bin`. Die Host-Tests (reine
-Logik, ohne Board) laufen mit der Task **CaDS: Host tests** oder:
+Logik, ohne Board) laufen ab Semesterstart mit der Task **CaDS: Host tests
+(Rahmen)**, die Tests eines Versuchs mit **CaDS: Lektionstests** (fragt nach der
+Nummer; heutige Instanz: **CaDS: Host tests**, die auch die roten Lektionstests
+mitlaufen lässt) oder im Terminal:
 
 ```bash
 cmake --preset host && cmake --build build/host
 ctest --test-dir build/host -LE '^rnlab-L'   # Rahmen: muss grün sein
 ```
 
-Die Tests der Lektionen (`-L rnlab-L01` usw.) sind auf `praktikum/start`
-absichtlich rot, bis ihr die jeweilige Aufgabe gelöst habt.
+Die Tests der Lektionen (`ctest --test-dir build/host -L '^rnlab-L01$'` usw.)
+sind auf `praktikum/start` absichtlich rot, bis ihr die jeweilige Aufgabe
+gelöst habt.
 
 ### 4. Board verbinden und flashen
 
 Board per USB an die **ST-Link-Buchse** (Micro-USB am Nucleo) anschließen.
+Die Befehle stehen in der Befehlspalette (*F1*); dort erscheinen sie mit dem
+Präfix der Erweiterung, also z. B. als „CaDS: CaDS Board: Verbinden …“ – tippt
+einfach „CaDS Board“.
 
 1. *F1 → **CaDS Board: Verbinden (USB/Serial freigeben)*** (oder in der
    Statusleiste links unten auf „Board: getrennt“ klicken). Der Browser fragt
