@@ -175,7 +175,7 @@ Dateien in eurem Fork (Branch `praktikum/start`, gleiche Pfade im eigenen Reposi
 
 | Funktion | Aufgabe |
 |---|---|
-| `rnlab_dns_status_t rnlab_l06_read_name(msg, len, offset, out, out_size, next)` | Namen ab `offset` als Text mit Punkten nach `out` lesen (Wurzel → `""`). Labels 1–63 B, `0` = Ende, `11xxxxxx xxxxxxxx` = Zeiger, `01…`/`10…` = Fehler. `*next` zeigt hinter den **ersten** Zeiger bzw. hinter die `0`. Nie außerhalb `msg[0 … len-1]` lesen, nie über `out_size` schreiben, auf **jeder** Eingabe terminieren. |
+| `rnlab_dns_status_t rnlab_l06_read_name(msg, len, offset, out, out_size, next)` | Namen ab `offset` als Text mit Punkten nach `out` lesen (Wurzel → `""`). Labels 1–63 B, `0` = Ende, `11xxxxxx xxxxxxxx` = Zeiger, `01…`/`10…` = Fehler. `*next` zeigt hinter den **ersten** Zeiger bzw. hinter die `0`. Nie außerhalb `msg[0 … len-1]` lesen, nie über `out_size` schreiben (dann `ERR_NAME_LONG`, aber `*next` trotzdem hinter den Namen setzen), auf **jeder** Eingabe terminieren. |
 | `rnlab_dns_status_t rnlab_l06_parse(msg, len, out)` | Header (QR-Bit gesetzt, genau eine Frage), Frage (Name, Typ), alle `ancount` Antworten überlesen, höchstens 4 speichern (Typ, TTL, bei A/IN die Adresse, `rdlength` muss 4 sein). TTL mit gesetztem oberstem Bit gilt als 0 (RFC 2181 §8). |
 
 Fertig vorgegeben: `rnlab_l06_min_ttl()`, `rnlab_l06_find_dns()`,
