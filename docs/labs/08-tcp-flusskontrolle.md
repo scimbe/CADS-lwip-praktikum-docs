@@ -291,6 +291,10 @@ Leserate bleibt das Fenster für immer zu.
       an den Display-Blit, der den Ethernet-Empfang über PA7 stilllegt
       (Versuch 07).
     - Wann ist „Nagle aus“ die richtige Wahl, wann schadet es?
+    - Die Fortsetzung: Mit Nagle aus ging `lab info` als rund 35
+      Kleinstsegmente hinaus, und `rx_ring_overruns` stieg, obwohl keine
+      Daten verloren gingen. Was lief über, und warum? Wie sähe eine bessere
+      Lösung aus?
 
 ## Auswertung
 

@@ -120,6 +120,19 @@ try {
       if (!existsSync(htmlPath)) continue;
       await page.goto(pathToFileURL(htmlPath).href, { waitUntil: 'networkidle' });
 
+      // Aufklappbare Bloecke (??? example "Vertiefung …") oeffnen: Chromium
+      // druckt ein geschlossenes <details> nur mit seiner Titelzeile. Bis
+      // 2026-09-28 fehlte so der Inhalt aller 18 optionalen Vertiefungen in
+      // den PDFs. Loesungsbloecke sind im oeffentlichen Spiegel schon entfernt.
+      const opened = await page.evaluate(() => {
+        let n = 0;
+        for (const d of document.querySelectorAll('details:not([open])')) {
+          d.open = true;
+          n += 1;
+        }
+        return n;
+      });
+
       // Lazy geladene Bilder wuerden im Druck fehlen, weil nie gescrollt
       // wird: erst eager schalten, dann auf Bilder und Schriften warten.
       await page.evaluate(async () => {
@@ -169,7 +182,8 @@ try {
         footerTemplate: FOOTER_TEMPLATE,
       });
       console.log(
-        `OK  ${relative(siteDir, htmlPath)} -> ${relative(siteDir, pdfPath)}  (${rewritten} Links umgeschrieben)`,
+        `OK  ${relative(siteDir, htmlPath)} -> ${relative(siteDir, pdfPath)}  ` +
+          `(${rewritten} Links umgeschrieben, ${opened} Bloecke aufgeklappt)`,
       );
     }
   }
