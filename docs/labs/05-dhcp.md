@@ -273,8 +273,8 @@ cmake --build build/host && ctest --test-dir build/host -L rnlab-L05 --output-on
   Adresse mit `lab info` über die serielle Konsole holen.
 - **Typ `?` im Protokoll, „Eigener Parser: noch kein ACK erkannt“:**
   `rnlab_l05_parse()` liefert noch `false`. Erst die Host-Tests grün machen.
-- **Bytereihenfolge:** Alle Felder sind big-endian. Eine `xid 0x78c80b4d`
-  steht im Frame als `78 c8 0b 4d`.
+- **Bytereihenfolge:** Alle Felder sind big-endian. Eine `xid 0x1a2b3c4d`
+  steht im Frame als `1a 2b 3c 4d`.
 - **T1 wird nie erreicht:** Bei 3600 s Lease dauert das 30 min. Für den
   Versuch nehmt ihr `lab 05 renew`.
 
