@@ -120,8 +120,13 @@ Nach dem Versuch könnt ihr …
     python3 tools/rnlab.py lab <board> "lab info"
     ```
 
-    Verloren = gesendet − (Δrx − 8 − 6 · Abrufe): 8 Frames bringt die zweite
-    `lab info`-Verbindung, 6 jeder HTTP-Abruf der App (gemessen). Die
+    Verloren = gesendet − (Δrx − *k* − 6 · Abrufe). *k* sind die Frames, die
+    die zweite `lab info`-Verbindung selbst bringt: vorher einmal zweimal
+    direkt hintereinander `lab info` aufrufen, die Differenz der rx-Zähler ist
+    *k* (hängt vom Firmware-Stand ab, zuletzt 7). Jeder HTTP-Abruf der App
+    bringt dem Board 6 Frames (gemessen als `lab 10 get` gegen `lab 10 abort`).
+    Die Zahl der Abrufe im Fenster zeigt `lab 11 status` („Abrufe“) vorher und
+    nachher. Die
     Datagramme an Port 9 verwirft das Board (ICMP „Port unreachable“),
     gezählt werden sie trotzdem. **Nicht schneller als 200 1/s:** Die
     Hauptschleife leert den Empfangsring nur alle 10 ms; bei 1000 1/s gehen
@@ -303,9 +308,9 @@ WETTER_PPM_DIR=/tmp ./build/host/tests/unit/test_wetter_app   # Bildschirmfotos 
 - **Antwort auf den Befehl nach `lab key` fehlt:** `lab key` selbst antwortet
   sofort, aber wechselt die Taste die Ansicht, zeichnet das Display danach den
   ganzen Bildschirm neu (≈ 0,45 s, Erwartungswert 2) – so lange ist der
-  Ethernet-Empfang aus. Ein Befehl direkt danach wartet diese Pause ab; `rnlab.py lab` hört standardmäßig nach 0,5 s
-  Ruhe auf. Dann `python3 tools/rnlab.py lab --idle 1 <board> "…"` oder kurz
-  warten.
+  Ethernet-Empfang aus. Ein Befehl direkt danach wartet diese Pause ab.
+  `rnlab.py lab` wartet standardmäßig 1 s Ruhe ab und übersteht das; ein
+  eigenes Skript oder `nc` mit kürzerem Timeout nicht – dann kurz warten.
 - **Display flackert, Pings gehen verloren:** zu viel gezeichnet – z. B. die
   Statuszeile jede Sekunde (Sekundenanzeige!) oder mehrere Felder in einem
   Frame. `test_wetter_app` zeigt, welcher Blit zu groß war.

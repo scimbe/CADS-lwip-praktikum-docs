@@ -80,6 +80,13 @@ Nach dem Versuch könnt ihr …
 
 1. Firmware-Aufgabe umsetzen, Host-Tests grün, flashen.
 2. **Erwartungswerte** notieren (nächster Abschnitt).
+
+    !!! warning "Vor jeder Messreihe: `lab 07 udp reset`"
+        Jeder `udp-send`-Lauf beginnt wieder bei Sequenznummer 0. Ohne
+        `lab 07 udp reset` (oder `udp start`, das ebenfalls zurücksetzt) hält die
+        Senke die neuen Nummern für uralte Nachzügler des vorigen Laufs und
+        zählt sie als „veraltet“ – Verluste erscheinen dann gar nicht.
+
 3. **A – Grundlinie:** Senke starten, 1000 kleine Datagramme mit 100/s.
 
     ```bash
@@ -99,7 +106,7 @@ Nach dem Versuch könnt ihr …
     python3 tools/rnlab.py lab 192.168.33.99 "lab 07 udp stats"
     ```
 
-5. **C – Dauerstrom:** 3000 Datagramme mit 500, 1000, 2000, 5000 und
+5. **C – Dauerstrom:** vor jedem Lauf `lab 07 udp reset`, dann 3000 Datagramme mit 500, 1000, 2000, 5000 und
    „unbegrenzt“ (`--rate 0`) Datagrammen/s; danach einmal 2000 × 1400 Byte
    mit 500/s (`--size 1400`).
 6. **D – Display:** Strom mit 500/s über 6 s, in der Mitte 2 s Display-Last:
@@ -251,7 +258,15 @@ Ohne Implementierung zählt die Senke jedes Datagramm als „fehlerhaft“.
 ## Potenzielle Herausforderungen
 
 - **„veraltet“ zählt hoch, „verloren“ bleibt 0:** `udp reset` vergessen. Der
-  neue Lauf beginnt wieder bei 0, das ist aus Sicht des Trackers uralt.
+  neue Lauf beginnt wieder bei 0. Die Senke vergleicht in Serienarithmetik
+  (RFC 1982): 0 liegt aus ihrer Sicht **hinter** der höchsten Nummer des
+  vorigen Laufs, also ein Nachzügler weit außerhalb des Fensters – „veraltet“.
+  Einen Überlauf (0xFFFFFFFF → 0, der Sender zählt einfach weiter) erkennt die
+  Arithmetik korrekt; den **Neustart** eines Senders kann sie nicht erkennen,
+  weil nichts im Datagramm ihn anzeigt. TCP löst das mit dem
+  Verbindungsaufbau: Jede neue Verbindung handelt im SYN eine eigene
+  Anfangsnummer aus (Versuch 08, ISN); UDP hat keinen solchen Anfang, das
+  Protokoll darüber (hier: `udp reset`) muss es regeln.
 - **Endianness:** Wer `*(uint32_t*)data` liest, bekommt auf dem Cortex-M4 und
   auf dem Host (beide little-endian) die Bytes vertauscht – und riskiert auf
   dem Board einen unausgerichteten Zugriff. Byteweise zusammensetzen.
