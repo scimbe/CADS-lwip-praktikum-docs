@@ -59,8 +59,8 @@ Nach dem Versuch könnt ihr …
  └───────────────────────────────┘                   └──────────────────┘
 ```
 
-- **Image** CADS Firmware-Labor im Browser (Chrome, Chromium oder Edge – nur
-  diese können WebUSB): bauen, flashen, serielle Konsole. Das Image läuft auf
+- **Image** CADS Firmware-Labor im Browser (Chrome oder Chromium – nur diese
+  sind für WebUSB/WebSerial erprobt): bauen, flashen, serielle Konsole. Das Image läuft auf
   einem Server; es sieht euer lokales Netz **nicht**.
 - **Eigener Rechner:** Board-Schnittstelle im Setup **S1** mit
   `192.168.33.10/24`, ohne Gateway. Dort laufen `ping`, Wireshark und
@@ -70,15 +70,18 @@ Nach dem Versuch könnt ihr …
 
 ## Versuchsablauf
 
-!!! warning "Schritte 1–4 werden mit dem echten Image verifiziert"
-    Image-Auswahl und GitLab-Anmeldung werden gerade fertiggestellt. Die
-    Schritte 1–4 beschreiben den vorgesehenen Ablauf; sie werden zur Abnahme
-    mit dem echten Image geprüft und hier bei Abweichungen angepasst.
+!!! warning "Stand des Zugangs"
+    Die Image-Auswahl im Portal wird zum Semesterstart freigeschaltet. Bis
+    dahin erhaltet ihr den Zugang zum Firmware-Labor von der Betreuung. Die
+    Schritte 1–4 beschreiben den Ablauf ab Semesterstart; sie werden zur
+    Abnahme mit dem echten Image geprüft und hier bei Abweichungen angepasst.
 
 ### 1. Image starten
 
-Portal öffnen, **vor** der Anmeldung das Image **CADS Firmware-Labor**
-wählen, per Single-Sign-on anmelden. Details und der aktuelle Stand stehen in
+Ab Semesterstart: Portal öffnen, **vor** der Anmeldung das Image
+**CADS Firmware-Labor** wählen und per Single-Sign-on anmelden. Nach der
+Anmeldung prüft das Portal, ob das Image für eure Gruppe freigegeben ist.
+Bis dahin gilt der Zugang, den ihr von der Betreuung bekommt. Details stehen in
 [Firmware-Labor-Image](../reference/firmware-lab-image.md#image-wahlen-und-anmelden).
 
 ### 2. Eigenen Fork anlegen und auschecken
@@ -147,7 +150,7 @@ Board per USB an die **ST-Link-Buchse** (Micro-USB am Nucleo) anschließen.
 
 === "Windows"
 
-    Chrome/Edge greifen per WebUSB nur auf das ST-Link zu, wenn dessen
+    Chrome/Chromium greifen per WebUSB nur auf das ST-Link zu, wenn dessen
     Debug-Schnittstelle den **WinUSB**-Treiber hat. Fehlt er (Gerät erscheint
     im Dialog nicht oder lässt sich nicht öffnen), mit
     [Zadig](https://zadig.akeo.ie/) für „STM32 STLink“ WinUSB installieren.

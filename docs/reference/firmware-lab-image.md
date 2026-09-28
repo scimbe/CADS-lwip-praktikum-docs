@@ -7,10 +7,10 @@ browserbasierten Entwicklungsumgebung: dem Image **CADS Firmware-Labor**
 Board und Ethernet bleiben dabei an **eurem eigenen Rechner**; geflasht wird
 per WebUSB direkt aus dem Browser.
 
-!!! warning "In Aufbau"
-    Die Image-Auswahl auf dem Portal wird gerade umgesetzt. Diese Seite
-    beschreibt den **vorgesehenen Ablauf**; Abweichungen im Detail werden hier
-    nachgetragen, sobald die Auswahl freigeschaltet ist.
+!!! info "Stand"
+    Die Image-Auswahl im Portal wird zum Semesterstart freigeschaltet. Bis
+    dahin erhaltet ihr den Zugang zum Firmware-Labor von der Betreuung.
+    Die Schritte unten beschreiben den Ablauf ab Semesterstart.
 
 --8<-- "issue-feedback.md"
 
@@ -18,8 +18,9 @@ per WebUSB direkt aus dem Browser.
 
 1. [rn-praktikum.bunsenbrenner.org](https://rn-praktikum.bunsenbrenner.org)
    öffnen.
-2. **Vor der Anmeldung** das Image **CADS Firmware-Labor** auswählen. Welche
-   Images angeboten werden, hängt von eurer Praktikumsgruppe ab.
+2. **Vor der Anmeldung** das Image **CADS Firmware-Labor** auswählen. Nach
+   der Anmeldung prüft das Portal, ob dieses Image für eure Praktikumsgruppe
+   freigegeben ist.
 3. Per Single-Sign-on anmelden. Mit derselben Anmeldung erhält die Umgebung
    auch Zugriff auf euer GitLab-Konto der Hochschule – ein zweiter Login für
    `git clone`/`git push` ist nicht nötig.
