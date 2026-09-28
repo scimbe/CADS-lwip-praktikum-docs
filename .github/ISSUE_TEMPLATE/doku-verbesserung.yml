@@ -1,0 +1,48 @@
+name: "Doku: Fehler oder Verbesserung"
+description: >-
+  Meldet einen Fehler, eine Lücke oder einen Verbesserungsvorschlag in einem
+  Aufgabenblatt oder einer anderen Doku-Seite des lwIP-Praktikums.
+title: "Doku: "
+labels: ["doku", "aus-praktikum"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Danke fürs Melden! Wenn ihr über den "Verbesserung vorschlagen"-Knopf
+        auf einer Doku-Seite hierher gekommen seid, ist das Feld "Blatt /
+        Seite" unten schon ausgefüllt - prüft kurz, ob es stimmt, und ergänzt
+        bei Bedarf den genauen Abschnitt.
+  - type: input
+    id: seite
+    attributes:
+      label: Blatt / Seite
+      description: >-
+        Welches Aufgabenblatt bzw. welche Doku-Seite ist betroffen? Wird beim
+        Klick aus der Doku automatisch vorausgefüllt (Titel + Link) - bitte
+        bei Bedarf um den genauen Teil/Abschnitt ergänzen.
+      placeholder: "z. B. Blatt 07 - Versuchsablauf (UDP-Transport)"
+    validations:
+      required: true
+  - type: textarea
+    id: beschreibung
+    attributes:
+      label: Was fehlt oder funktioniert nicht?
+      description: >-
+        Kurze Beschreibung - je konkreter (z. B. erwarteter vs.
+        tatsächlicher Befehlsausgabe), desto schneller lässt es sich beheben.
+      placeholder: |
+        Was habe ich erwartet? Was ist stattdessen passiert?
+    validations:
+      required: true
+  - type: dropdown
+    id: art
+    attributes:
+      label: Art des Hinweises
+      options:
+        - Fehler / stimmt nicht (mehr)
+        - Fehlt / unvollständig
+        - Unklar formuliert
+        - Sonstiges
+      default: 3
+    validations:
+      required: false

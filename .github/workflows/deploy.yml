@@ -1,0 +1,115 @@
+name: Build and deploy docs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # RIEGEL vor dem Bau: dieser Spiegel darf weder die Traegerinstitution
+      # nennen noch Loesungsmarker oder private Pfade enthalten. Das
+      # erzeugende Skript prueft dasselbe schon vor dem Push; hier greift die
+      # zweite Sicherung, falls jemand direkt in diesem Repo committet.
+      #
+      # Die Muster sind absichtlich mit Zeichenklassen geschrieben
+      # ([A], [m], ...): so trifft der Riegel diese Datei nicht selbst, und
+      # die Pruefung kann ausnahmslos alle Dateien des Spiegels abdecken.
+      - name: Riegel - keine Markennennung, keine Loesungen, nichts Privates
+        run: |
+          treffer=$(grep -rInE \
+            -e '\bH[A]W\b' -e '[Hh]a[m]burg' -e 'HA[M]BURG' \
+            -e '[Mm]usterl(ö|oe)[s]ung' -e '\b[Ss]olutions?\b' -e '\bloesung/[l][0-9]' \
+            -e 'priva[t]:' -e 'konzep[t]/' -e 'demo[s]/' \
+            -e 'CADS-lwip-praktiku[m]($|[^-])' -e 'scimbe/cads-zer[o]($|[^a-zA-Z0-9_-])' \
+            --exclude-dir=.git . 2>/dev/null || true)
+          anzahl=$(printf '%s\n' "$treffer" | grep -c . || true)
+          echo "Treffer: $anzahl (Soll: 0)"
+          if [ "$anzahl" -ne 0 ]; then
+            echo "$treffer"
+            echo "FEHLER: unzulaessiger Inhalt im oeffentlichen Spiegel."
+            exit 1
+          fi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r docs/requirements.txt
+      # --strict: kaputte interne Links und Anker brechen den Bau ab.
+      - run: mkdocs build --strict
+
+      # Kein LaTeX/Pandoc: Playwright druckt die gebauten HTML-Seiten, die
+      # PDFs entsprechen damit genau dem veroeffentlichten Text.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Playwright bereitstellen
+        run: npm init -y >/dev/null && npm i -D @playwright/test@^1.49.0 && npx playwright install --with-deps chromium
+      - name: PDFs aus der gebauten Site rendern
+        # Die Basis-URL ist Pflicht: sonst stehen file:///home/runner/...-Pfade
+        # als Linkziele in jedem PDF.
+        env:
+          PDF_BASE_URL: https://scimbe.github.io/CADS-lwip-praktikum-docs/
+        run: node scripts/render-lab-pdfs.mjs "$(pwd)/site"
+      - name: Gegenprobe - Anzahl, Knopf-Ziel und Linkziele der PDFs
+        run: |
+          soll=$(ls docs/labs/*.md | wc -l)
+          anzahl=$(find site -name '*.pdf' | wc -l)
+          echo "PDFs erzeugt: $anzahl (Soll: $soll, ein PDF je Versuchsseite)"
+          test "$anzahl" -eq "$soll" || { echo "FEHLER: $soll PDFs erwartet, gefunden $anzahl"; exit 1; }
+          # Portabel (auch BSD/macOS), damit scripts/verify-public.sh im privaten
+          # Repo genau diese Schritte lokal nachfahren kann.
+          find site -name '*.pdf' -exec ls -l {} + | awk '{print "  " $NF "  " $5 " Byte"}'
+
+          # Der Knopf muss auf eine Datei zeigen, die es gibt: geprueft wird
+          # das href der gebauten Seite, nicht eine geratene URL.
+          fehler=0
+          for seite in site/labs/*/index.html; do
+            verzeichnis=$(dirname "$seite")
+            ziel=$(grep -oE 'href="[^"]*\.pdf"' "$seite" | head -1 | sed 's/href="//; s/"$//')
+            test -n "$ziel" || { echo "FEHLER: kein PDF-Knopf in $seite"; fehler=1; continue; }
+            aufgeloest=$(python3 -c 'import os, sys; print(os.path.normpath(sys.argv[1]))' "$verzeichnis/$ziel")
+            if [ -f "$aufgeloest" ]; then
+              echo "  OK    $seite -> $ziel"
+            else
+              echo "  FEHLT $seite -> $ziel (aufgeloest: $aufgeloest)"
+              fehler=1
+            fi
+          done
+
+          if grep -rlU 'file:///home/runner' site --include='*.pdf' | head -1 | grep -q .; then
+            echo "FEHLER: file://-Build-Pfad als Linkziel in mindestens einem PDF"
+            fehler=1
+          fi
+          if grep -rl ':material-file-pdf-box:' site --include='*.html' | head -1 | grep -q .; then
+            echo "FEHLER: roher Shortcode :material-file-pdf-box: im HTML"
+            fehler=1
+          fi
+          test "$fehler" -eq 0 || exit 1
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

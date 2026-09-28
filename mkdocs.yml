@@ -1,0 +1,110 @@
+site_name: lwIP-Praktikum auf cads-zero
+site_description: >-
+  Praktikumsaufgaben und Referenzdokumentation des Rechnernetze-Praktikums
+  mit lwIP auf dem ITS-Board (cads-zero).
+site_url: https://scimbe.github.io/CADS-lwip-praktikum-docs/
+docs_dir: docs
+copyright: "&copy; 2026 CADS AG"
+
+theme:
+  name: material
+  language: de
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Dunkelmodus aktivieren
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Hellmodus aktivieren
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.top
+    - navigation.indexes
+    - content.code.copy
+    - content.tabs.link
+    - toc.follow
+    - search.suggest
+
+plugins:
+  - search
+  - glightbox:
+      auto_caption: true
+      caption_position: bottom
+  # Vorerst nur Deutsch; die Suffix-Struktur (seite.en.md) haelt den Weg zu
+  # einer englischen Fassung offen, ohne Pfade spaeter umzubauen.
+  - i18n:
+      docs_structure: suffix
+      languages:
+        - locale: de
+          name: Deutsch
+          build: true
+          default: true
+      # Kein Sprachumschalter, solange es nur Deutsch gibt; vermeidet zugleich
+      # die Warnung zu navigation.instant, an der --strict scheitert.
+      reconfigure_material: false
+
+# Kaputte interne Links und Anker brechen `mkdocs build --strict` ab
+# (Linkcheck aus der Spezifikation, Abschnitt 5).
+validation:
+  omitted_files: warn
+  # /pfad.md = relativ zu docs/ (geprueft und in relative Links umgeschrieben);
+  # noetig fuer Snippets, die Seiten verschiedener Tiefe einbinden.
+  absolute_links: relative_to_docs
+  unrecognized_links: warn
+  anchors: warn
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - tables
+  - attr_list
+  - md_in_html
+  - pymdownx.keys
+  - toc:
+      permalink: true
+  - pymdownx.snippets:
+      base_path:
+        - docs/.snippets
+      check_paths: true
+
+extra_javascript:
+  - assets/js/issue-feedback.js
+
+
+nav:
+  - Start: index.md
+  - Praktika:
+      - "00 · Onboarding": labs/00-onboarding.md
+      - "01 · Schichten & Kapselung": labs/01-schichten-kapselung.md
+      - "02 · Ethernet & ARP": labs/02-ethernet-arp.md
+      - "03 · IPv4 & Subnetting": labs/03-ipv4-subnetting.md
+      - "04 · ICMP": labs/04-icmp.md
+      - "05 · DHCP": labs/05-dhcp.md
+      - "06 · DNS & NAT": labs/06-dns-nat.md
+      - "07 · UDP-Transport": labs/07-udp-transport.md
+      - "08 · TCP-Flusskontrolle": labs/08-tcp-flusskontrolle.md
+      - "09 · Congestion Control": labs/09-congestion-control.md
+      - "10 · HTTP-Client für Wetterdaten": labs/10-http-wetter-1.md
+      - "11 · Wetter-App": labs/11-wetter-app.md
+  - Referenz:
+      - "Netz-Setup (S1/S2)": reference/netz-setup.md
+      - "Serielle Konsole": reference/serielle-konsole.md
+      - "rnlab.py – Host-Werkzeug": reference/rnlab-tool.md
+      - "Firmware-Labor-Image": reference/firmware-lab-image.md
