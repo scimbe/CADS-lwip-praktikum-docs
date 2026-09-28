@@ -78,6 +78,9 @@ Nach dem Versuch könnt ihr …
     | `lab 06 last` | die letzte Antwort Feld für Feld |
     | `lab 06 server [ip]` | DNS-Server anzeigen bzw. setzen (Standard: per DHCP) |
 
+    Quellport und DNS-ID wählt das Board für jede Anfrage zufällig: Eure Werte
+    weichen von allen Beispielen auf dieser Seite ab.
+
 ## Versuchsablauf
 
 1. Firmware-Aufgabe umsetzen, Host-Tests grün, flashen.

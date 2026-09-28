@@ -86,6 +86,10 @@ Nach dem Versuch könnt ihr …
     | `lab 05 renew` | sofort verlängern (wie bei Ablauf von T1) |
     | `lab 05 ignore <ip>` / `all` / `off` | Antworten dieses Servers (bzw. aller) verwerfen, bevor lwIP sie sieht; im Protokoll als `rx*` |
 
+    Die `xid` wählt das Board bei jedem Start zufällig. Eure `xid`s,
+    Adressen und Zeitstempel weichen deshalb von allen Beispielen auf dieser
+    Seite ab.
+
 ## Versuchsablauf
 
 1. Firmware-Aufgabe umsetzen, Host-Tests grün, flashen (Abschnitt
@@ -269,8 +273,8 @@ cmake --build build/host && ctest --test-dir build/host -L rnlab-L05 --output-on
   Adresse mit `lab info` über die serielle Konsole holen.
 - **Typ `?` im Protokoll, „Eigener Parser: noch kein ACK erkannt“:**
   `rnlab_l05_parse()` liefert noch `false`. Erst die Host-Tests grün machen.
-- **Bytereihenfolge:** Alle Felder sind big-endian. `xid 0x61303fb1` steht
-  im Frame als `61 30 3f b1`.
+- **Bytereihenfolge:** Alle Felder sind big-endian. Eine `xid 0x78c80b4d`
+  steht im Frame als `78 c8 0b 4d`.
 - **T1 wird nie erreicht:** Bei 3600 s Lease dauert das 30 min. Für den
   Versuch nehmt ihr `lab 05 renew`.
 
