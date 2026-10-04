@@ -53,11 +53,11 @@ Nach dem Versuch könnt ihr …
 !!! question "Kurz nachgedacht: Warum ist die ISN zufällig?"
     Die erste Sequenznummer einer Verbindung (Initial Sequence Number) seht
     ihr in Wireshark im SYN, wenn ihr unter *Protokolleinstellungen → TCP*
-    „Relative Sequenznummern“ ausschaltet. Bis vor Kurzem startete das Board
-    nach jedem Reset mit derselben ISN (6510). Heute rechnet es sie nach
-    RFC 6528 aus einem Hash über die vier Adressen/Ports und eine
-    4-µs-Uhr; über drei Resets ergab das 3614473351, 2397320143 und
-    232723522. Welche zwei Probleme löst das? Denkt an ein altes Segment
+    „Relative Sequenznummern“ ausschaltet. Ein Stack mit festem Startwert
+    beginnt nach jedem Reset mit derselben ISN (lwIP ohne eigene
+    ISN-Funktion: 6510). Das Board rechnet sie nach RFC 6528 aus einem Hash
+    über die vier Adressen/Ports und eine 4-µs-Uhr; über drei Resets ergab
+    das 3614473351, 2397320143 und 232723522. Welche zwei Probleme löst das? Denkt an ein altes Segment
     einer früheren Verbindung mit demselben 4-Tupel und an einen Angreifer,
     der Segmente in eine fremde Verbindung einschleusen will (Skript 5.26,
     SYN-Angriffe und IP-Spoofing).

@@ -19,7 +19,7 @@ warum sie so viel größer ist, als die Leitung allein erklärt.
 
 Nach dem Versuch könnt ihr …
 
-- das Image **CADS Firmware-Labor** starten, euren Fork der Firmware
+- das Image **CADS Firmware-Lab** starten, euren Fork der Firmware
   auschecken, die Firmware bauen und per WebUSB flashen,
 - auf **eurem** Betriebssystem (macOS, Windows oder Linux) der
   Board-Schnittstelle eine statische Adresse geben (Setup S1) und prüfen, ob
@@ -51,7 +51,7 @@ Nach dem Versuch könnt ihr …
  Eigener Rechner                                           ITS-Board
  ┌───────────────────────────────┐   USB (ST-Link)   ┌──────────────────┐
  │ Browser: Image CADS Firmware- │───────────────────│ Flashen, serielle│
- │   Labor (bauen, flashen,      │                   │ Konsole 115200 Bd│
+ │   Lab (bauen, flashen,        │                   │ Konsole 115200 Bd│
  │   serielle Konsole)           │                   │                  │
  │ Wireshark, rnlab.py, ping     │    Ethernet       │                  │
  │ Board-Schnittstelle           │═══════════════════│ 192.168.33.99/24 │
@@ -59,7 +59,7 @@ Nach dem Versuch könnt ihr …
  └───────────────────────────────┘                   └──────────────────┘
 ```
 
-- **Image** CADS Firmware-Labor im Browser (Chrome oder Chromium – nur diese
+- **Image** CADS Firmware-Lab im Browser (Chrome oder Chromium – nur diese
   sind für WebUSB/WebSerial erprobt): bauen, flashen, serielle Konsole. Das Image läuft auf
   einem Server; es sieht euer lokales Netz **nicht**.
 - **Eigener Rechner:** Board-Schnittstelle im Setup **S1** mit
@@ -70,33 +70,28 @@ Nach dem Versuch könnt ihr …
 
 ## Versuchsablauf
 
-!!! warning "Stand des Zugangs"
-    Die Image-Auswahl im Portal wird zum Semesterstart freigeschaltet. Bis
-    dahin erhaltet ihr den Zugang zum Firmware-Labor von der Betreuung. Die
-    Schritte 1–4 beschreiben den Ablauf ab Semesterstart; sie werden zur
-    Abnahme mit dem echten Image geprüft und hier bei Abweichungen angepasst.
+### 1. Firmware-Labor starten
 
-### 1. Image starten
-
-Ab Semesterstart: Portal öffnen, **vor** der Anmeldung das Image
-**CADS Firmware-Labor** wählen und per Single-Sign-on anmelden. Nach der
-Anmeldung prüft das Portal, ob das Image für eure Gruppe freigegeben ist.
-Bis dahin gilt der Zugang, den ihr von der Betreuung bekommt. Details stehen in
-[Firmware-Labor-Image](../reference/firmware-lab-image.md#image-wahlen-und-anmelden).
+Am Praktikumsportal mit dem eigenen Konto anmelden und auf der Seite
+**Umgebung wählen** den Eintrag **CADS Firmware-Lab** wählen. Es öffnet sich
+VS Code im Browser, ein weiteres Passwort ist nicht nötig. Läuft schon eine
+andere Umgebung, öffnet das Portal diese; dann dort zuerst abmelden. Details
+stehen in
+[Firmware-Labor-Image](../reference/firmware-lab-image.md#anmelden-und-umgebung-starten).
 
 ### 2. Arbeitsbereich und eigener Fork
 
-Ab Semesterstart öffnet das Image den Arbeitsbereich `cads-zero` mit dem
-Stand `praktikum/start` der Firmware bereits fertig, samt Submodulen und
-vorbereiteten Tasks – ihr müsst nichts klonen. Eure Änderungen gehören in
-euren eigenen Fork **`cads-zero-firmware`** im GitLab der Hochschule:
+VS Code öffnet den Arbeitsbereich `cads-zero` (Ordner
+`/home/coder/workspace/cads-zero`). Er enthält die Firmware auf dem Branch
+`praktikum/start`, samt Submodulen und vorbereiteten Tasks – ihr müsst nichts
+klonen. `origin` zeigt dort auf die öffentliche Vorlage. Eure Änderungen
+gehören in euren eigenen Fork **`cads-zero-firmware`** im GitLab der
+Hochschule:
 
-1. Im GitLab das Projekt `cads-zero-firmware` in euren Namespace **forken**
+1. Im GitLab die Vorlage `cads-zero-firmware` in euren Namespace **forken**
    (einmalig).
-2. Ab Semesterstart ist der Arbeitsbereich im Image direkt euer Fork. Bis
-   dahin – oder falls `git remote -v` noch nicht euren Fork zeigt – verbindet
-   ihr den vorbereiteten Arbeitsbereich selbst mit eurem Fork
-   (*☰ → Terminal → New Terminal*):
+2. Im Terminal (*☰ → Terminal → New Terminal*) den Arbeitsbereich mit eurem
+   Fork verbinden:
 
     ```bash
     git remote -v                                   # zeigt, wohin origin zeigt
@@ -126,10 +121,9 @@ cmake --preset itsboard && cmake --build build/itsboard
 ```
 
 Das Ergebnis liegt in `build/itsboard/cads-zero.bin`. Die Host-Tests (reine
-Logik, ohne Board) laufen ab Semesterstart mit der Task **CaDS: Host tests
-(Rahmen)**, die Tests eines Versuchs mit **CaDS: Lektionstests** (fragt nach der
-Nummer; heutige Instanz: **CaDS: Host tests**, die auch die roten Lektionstests
-mitlaufen lässt) oder im Terminal:
+Logik, ohne Board) laufen mit der Task **CaDS: Host tests (Rahmen)**, die
+Tests eines Versuchs mit **CaDS: Lektionstests** (fragt nach der Nummer) oder
+im Terminal:
 
 ```bash
 cmake --preset host && cmake --build build/host
@@ -151,8 +145,8 @@ einfach „CaDS Board“.
    Statusleiste links unten auf „Board: getrennt“ klicken). Der Browser fragt
    zweimal: zuerst nach dem USB-Gerät („STM32 STLink“), dann nach der
    seriellen Schnittstelle des ST-Link.
-2. *F1 → **CaDS Board: Flash (build/itsboard/cads-zero.bin)*** oder die Task
-   **CaDS: Build + Flash**. Fortschritt und Ergebnis erscheinen als
+2. *F1 → **CaDS Board: Flash*** (flasht `build/itsboard/cads-zero.bin`) oder
+   die Task **CaDS: Build + Flash**. Fortschritt und Ergebnis erscheinen als
    Benachrichtigung („Flash ok: … Bytes“).
 
 === "macOS"

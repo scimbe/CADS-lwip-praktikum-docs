@@ -123,7 +123,7 @@ Nach dem Versuch könnt ihr …
     Verloren = gesendet − (Δrx − *k* − 6 · Abrufe). *k* sind die Frames, die
     die zweite `lab info`-Verbindung selbst bringt: vorher einmal zweimal
     direkt hintereinander `lab info` aufrufen, die Differenz der rx-Zähler ist
-    *k* (hängt vom Firmware-Stand ab, zuletzt 7). Jeder HTTP-Abruf der App
+    *k* (hängt vom Firmware-Stand ab, am Referenzplatz 7). Jeder HTTP-Abruf der App
     bringt dem Board 6 Frames (gemessen als `lab 10 get` gegen `lab 10 abort`).
     Die Zahl der Abrufe im Fenster zeigt `lab 11 status` („Abrufe“) vorher und
     nachher. Die

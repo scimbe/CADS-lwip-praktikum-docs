@@ -283,7 +283,7 @@ Board sofort, ob euer Dekoder läuft.
        Frames in diesem Feld – und was unterscheidet einen IEEE-802.3-Frame
        mit **Längenfeld** von einem **Ethernet-II**-Frame mit **Typfeld**?
     3. Für Ethernet II gibt es das Bit `CSTF`. Wo in
-       `targets/itsboard/hal/hal_eth_mac.c` wird es heute gesetzt?
+       `targets/itsboard/hal/hal_eth_mac.c` wird es gesetzt?
 
 --8<-- "issue-feedback.md"
 

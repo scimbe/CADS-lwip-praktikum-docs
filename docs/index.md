@@ -18,7 +18,7 @@ Erwartung und Messung.
 
 | Termin | # | Thema | Skript | Netz-Setup | Firmware-Aufgabe (Kern) |
 |---|---|---|---|---|---|
-| T01 | [00](labs/00-onboarding.md) | Onboarding | 5.2, 5.9 | S1 | Image wählen, Fork, bauen/flashen, `lab info`, ping |
+| T01 | [00](labs/00-onboarding.md) | Onboarding | 5.2, 5.9 | S1 | Umgebung starten, Fork, bauen/flashen, `lab info`, ping |
 | T02 | [01](labs/01-schichten-kapselung.md) | Schichten & Kapselung | 5.6, 5.9 | S1 | Frame-Dekoder Ethernet → IPv4 → ICMP/UDP/TCP |
 | T03 | [02](labs/02-ethernet-arp.md) | Ethernet & ARP | 5.15 | S1 | ARP-Cache-Dump, Gratuitous ARP, ARP-Parser |
 | T04 | [03](labs/03-ipv4-subnetting.md) | IPv4 & Subnetting | 5.11–5.14 | S1 | IPv4-Eingangsfilter, Netzmaske, `rnlab_same_subnet()` |
@@ -55,15 +55,14 @@ des eigenen Rechners) sind für macOS, Windows und Linux in der
 
 ## Bewertung
 
-!!! note "Wird noch festgelegt"
-    Die Bewertungs- und Abnahmekriterien werden vor Beginn des Semesters an
-    dieser Stelle veröffentlicht.
+Die Bewertungs- und Abnahmekriterien gibt die Betreuung in der
+Lehrveranstaltung bekannt.
 
 --8<-- "konventionen.md"
 
 ## Umgebung & Zugang
 
-Gebaut und geflasht wird im browserbasierten Image **CADS Firmware-Labor**
+Gebaut und geflasht wird im browserbasierten Image **CADS Firmware-Lab**
 (code-server mit Toolchain). Board und Ethernet hängen dabei an eurem eigenen
 Rechner; gemessen wird ebenfalls dort. Details:
 [Firmware-Labor-Image](reference/firmware-lab-image.md).

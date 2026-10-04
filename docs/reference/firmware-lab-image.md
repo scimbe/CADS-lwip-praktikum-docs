@@ -1,33 +1,29 @@
 # Firmware-Labor-Image
 
 Gebaut wird die Firmware nicht auf eurem Rechner, sondern in einer
-browserbasierten Entwicklungsumgebung: dem Image **CADS Firmware-Labor**
+browserbasierten Entwicklungsumgebung: dem Image **CADS Firmware-Lab**
 (code-server mit ARM-Toolchain, CMake und Host-Tests). Gestartet wird es über
 [rn-praktikum.bunsenbrenner.org](https://rn-praktikum.bunsenbrenner.org).
 Board und Ethernet bleiben dabei an **eurem eigenen Rechner**; geflasht wird
 per WebUSB direkt aus dem Browser.
 
-!!! info "Stand"
-    Die Image-Auswahl im Portal wird zum Semesterstart freigeschaltet. Bis
-    dahin erhaltet ihr den Zugang zum Firmware-Labor von der Betreuung.
-    Die Schritte unten beschreiben den Ablauf ab Semesterstart.
-
 --8<-- "issue-feedback.md"
 
-## Image wählen und anmelden
+## Anmelden und Umgebung starten
 
-1. [rn-praktikum.bunsenbrenner.org](https://rn-praktikum.bunsenbrenner.org)
-   öffnen.
-2. **Vor der Anmeldung** das Image **CADS Firmware-Labor** auswählen. Nach
-   der Anmeldung prüft das Portal, ob dieses Image für eure Praktikumsgruppe
-   freigegeben ist.
-3. Per Single-Sign-on anmelden. Mit derselben Anmeldung erhält die Umgebung
-   auch Zugriff auf euer GitLab-Konto der Hochschule – ein zweiter Login für
-   `git clone`/`git push` ist nicht nötig.
+1. Am Praktikumsportal
+   [rn-praktikum.bunsenbrenner.org](https://rn-praktikum.bunsenbrenner.org)
+   mit dem eigenen Konto anmelden.
+2. Nach der Anmeldung zeigt das Portal die Seite **Umgebung wählen**. Dort
+   den Eintrag **CADS Firmware-Lab** wählen.
+3. Das Firmware-Lab öffnet VS Code im Browser; ein weiteres Passwort ist
+   nicht nötig.
 
-Pro Person läuft **genau ein Image** gleichzeitig. Wer das Image wechseln
-will (z. B. zum Desktop-Image anderer Praktika), meldet sich ab und wählt vor
-der nächsten Anmeldung das andere Image.
+Pro Person läuft **genau eine Umgebung**. Die Seite „Umgebung wählen“
+erscheint, wenn keine läuft; läuft eine, öffnet das Portal diese direkt, und
+die Wahl gilt bis zum Abmelden. Läuft der Desktop des
+Rechnernetze-Praktikums, meldet ihr euch dort mit dem Knopf **Logout** oben
+rechts ab und wählt nach der nächsten Anmeldung neu.
 
 ## Eigener Fork
 
@@ -37,29 +33,29 @@ GitLab-Namespace (gleicher Name wie die Vorlage), Grundlage ist der Branch
 [scimbe/cads-zero-firmware](https://github.com/scimbe/cads-zero-firmware/tree/praktikum/start)
 lesen; die Links in den Versuchsbeschreibungen zeigen dorthin.
 
-1. Im GitLab das Projekt `cads-zero-firmware` in euren Namespace forken
-   (einmal zu Beginn, siehe [Onboarding](../labs/00-onboarding.md)).
-2. Ab Semesterstart öffnet das Firmware-Labor den Arbeitsbereich mit
-   `praktikum/start` bereits fertig (samt Submodulen und Tasks), klonen ist
-   nicht nötig. Bis dahin verbindet ihr den vorbereiteten Arbeitsbereich
-   selbst mit eurem Fork, siehe
-   [Onboarding, Schritt 2](../labs/00-onboarding.md#2-arbeitsbereich-und-eigener-fork).
+1. Im GitLab die Vorlage `cads-zero-firmware` in euren Namespace forken
+   (einmalig).
+2. Der Arbeitsbereich `cads-zero` (Ordner `/home/coder/workspace/cads-zero`)
+   enthält die Firmware auf `praktikum/start` (samt Submodulen und Tasks),
+   klonen ist nicht nötig. `origin` zeigt dort auf die öffentliche Vorlage;
+   mit eurem Fork verbindet ihr den Arbeitsbereich wie in
+   [Onboarding, Schritt 2](../labs/00-onboarding.md#2-arbeitsbereich-und-eigener-fork)
+   beschrieben.
 3. Je Versuch committen und pushen; die Stellen, an denen ihr Code ergänzt,
    sind im Quelltext mit `TODO(LNN)` markiert (z. B. `TODO(L03)`).
 
 ## Bauen, testen, flashen
 
-Im Terminal des code-servers:
+Über *☰ → Terminal → Run Task…* stehen die Tasks bereit: **CaDS: Build**
+baut die Firmware, **CaDS: Flash** und **CaDS: Build + Flash** bringen sie
+auf das Board, **CaDS: Host tests (Rahmen)** führt die Tests des Rahmens aus
+und **CaDS: Lektionstests** die Tests eines Versuchs (fragt nach der Nummer).
+Die Tests gibt es auch im Terminal des code-servers:
 
 ```bash
 # Host-Tests eines Versuchs (reine Logik, ohne Board)
 ctest --test-dir build/host -L '^rnlab-L03$'
 ```
-
-Ab Semesterstart gibt es dafür Tasks: **CaDS: Host tests (Rahmen)** für die
-Tests des Rahmens und **CaDS: Lektionstests** für die Tests eines Versuchs
-(fragt nach der Nummer). Heute heißt die Task noch **CaDS: Host tests** und
-lässt die Lektionstests mitlaufen.
 
 Die Lektions-Tests sind auf `praktikum/start` absichtlich **rot**: sie werden
 grün, sobald eure Implementierung stimmt. Die genauen Build- und
