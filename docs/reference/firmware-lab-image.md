@@ -21,9 +21,29 @@ per WebUSB direkt aus dem Browser.
 
 Pro Person läuft **genau eine Umgebung**. Die Seite „Umgebung wählen“
 erscheint, wenn keine läuft; läuft eine, öffnet das Portal diese direkt, und
-die Wahl gilt bis zum Abmelden. Läuft der Desktop des
-Rechnernetze-Praktikums, meldet ihr euch dort mit dem Knopf **Logout** oben
-rechts ab und wählt nach der nächsten Anmeldung neu.
+die Wahl gilt bis zum Abmelden.
+
+## Abmelden und Umgebung wechseln
+
+Im Firmware-Lab steht unten rechts in der Statusleiste der rote Knopf
+**Abmelden** (auch *F1* → **CaDS: Abmelden**). Es erscheint die Rückfrage
+„Vom Firmware-Labor abmelden? Offene Dateien werden vorher gespeichert, die
+Verbindung zum Board wird getrennt.“ mit **Abmelden** und **Cancel**. Nach
+der nächsten Anmeldung zeigt das Portal wieder die Seite „Umgebung wählen“.
+
+Der Wechsel geht in beide Richtungen, zwischen **CADS Firmware-Lab** und
+**Rechnernetze-Praktikum**: abmelden, neu anmelden, wählen. Im Desktop des
+Rechnernetze-Praktikums ist das der Knopf **Logout** oben rechts.
+
+Das Abmelden übersteht nur der Ordner `~/workspace`, also der Arbeitsbereich
+`cads-zero` mit Branches, Commits und den Dateien, die Git nicht verfolgt.
+Alles andere im Home-Verzeichnis und in `/tmp` bleibt nicht erhalten. Daraus
+folgt:
+
+- Name und E-Mail-Adresse für Commits im Repository setzen, also
+  `git config user.name …` und `git config user.email …` **ohne** `--global`
+  im Ordner `cads-zero`; `~/.gitconfig` gehört nicht zu `~/workspace`.
+- Regelmäßig committen und in den eigenen Fork pushen.
 
 ## Eigener Fork
 

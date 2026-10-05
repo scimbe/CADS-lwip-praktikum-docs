@@ -107,12 +107,24 @@ Hochschule:
     `git push` ändert sich. Den Fork in einen anderen Ordner zu klonen geht
     auch, dort fehlen aber die vorbereiteten Tasks des Images.
 
-3. Ab jetzt je Versuch committen und pushen; eure Stellen im Quelltext sind mit
+3. Name und E-Mail-Adresse für eure Commits im Arbeitsbereich setzen – ohne
+   `--global`, im Ordner `cads-zero`:
+
+    ```bash
+    git config user.name "Vorname Nachname"
+    git config user.email "eure.adresse@example.org"
+    ```
+
+    Die Einstellung liegt damit im Repository. Das Abmelden übersteht nur der
+    Ordner `~/workspace`; `~/.gitconfig` (das Ziel von `--global`) gehört
+    nicht dazu.
+
+4. Ab jetzt je Versuch committen und pushen; eure Stellen im Quelltext sind mit
    `TODO(LNN)` markiert (z. B. `TODO(L01)`).
 
 ### 3. Bauen
 
-*☰ → Terminal → Run Task… → **CaDS: Build*** (die Tasks `CaDS: …` richtet das
+*☰ → Terminal → Run Task…* → **CaDS: Build** (die Tasks `CaDS: …` richtet das
 Image beim Start ein; außerhalb des Images heißen die Tasks aus
 `.vscode/tasks.json` z. B. „Build: ITSboard firmware“) oder im Terminal:
 
@@ -141,11 +153,11 @@ Die Befehle stehen in der Befehlspalette (*F1*); dort erscheinen sie mit dem
 Präfix der Erweiterung, also z. B. als „CaDS: CaDS Board: Verbinden …“ – tippt
 einfach „CaDS Board“.
 
-1. *F1 → **CaDS Board: Verbinden (USB/Serial freigeben)*** (oder in der
+1. *F1* → **CaDS Board: Verbinden (USB/Serial freigeben)** (oder in der
    Statusleiste links unten auf „Board: getrennt“ klicken). Der Browser fragt
    zweimal: zuerst nach dem USB-Gerät („STM32 STLink“), dann nach der
    seriellen Schnittstelle des ST-Link.
-2. *F1 → **CaDS Board: Flash*** (flasht `build/itsboard/cads-zero.bin`) oder
+2. *F1* → **CaDS Board: Flash** (flasht `build/itsboard/cads-zero.bin`) oder
    die Task **CaDS: Build + Flash**. Fortschritt und Ergebnis erscheinen als
    Benachrichtigung („Flash ok: … Bytes“).
 
@@ -294,6 +306,19 @@ python3 tools/rnlab.py ping 192.168.33.99 -c 100 -i 0.2 -s 1472 --json > ping147
 
 Parallel in Wireshark auf der Board-Schnittstelle mitschneiden (Anzeigefilter
 `icmp || arp`) und die Zeitdifferenz Request → Reply eines Paares ablesen.
+
+### 8. Abmelden
+
+Vor dem Abmelden committen und in euren Fork pushen. Dann unten rechts in der
+Statusleiste auf den roten Knopf **Abmelden** klicken (oder *F1* →
+**CaDS: Abmelden**) und die Rückfrage mit **Abmelden** bestätigen. Offene
+Dateien werden dabei gespeichert, die Verbindung zum Board wird getrennt.
+
+Erhalten bleibt der Ordner `~/workspace`, also der Arbeitsbereich `cads-zero`
+mit Branches, Commits und auch den Dateien, die Git nicht verfolgt. Alles
+andere im Home-Verzeichnis und in `/tmp` bleibt nicht erhalten. Was zum
+Wechsel der Umgebung gehört, steht in
+[Firmware-Labor-Image](../reference/firmware-lab-image.md#abmelden-und-umgebung-wechseln).
 
 ## Erwartungswert (vor der Messung notieren!)
 
