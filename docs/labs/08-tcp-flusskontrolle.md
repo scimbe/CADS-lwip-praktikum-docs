@@ -99,7 +99,9 @@ Nach dem Versuch könnt ihr …
     Die Optionen bleiben im Build-Ordner gespeichert. Nach dem Versuch wieder
     auf `-DCADS_RNLAB_TCP_MSS=536 -DCADS_RNLAB_TCP_WND_MSS=8 -DCADS_RNLAB_TCP_SND_BUF_MSS=4 -DCADS_RNLAB_ETH_RX_COUNT=8`
     zurücksetzen. Nicht jede Kombination passt ins SRAM: 1460/32 mit
-    `TCP_SND_BUF_MSS` 16 geht nur bis RX 20 (der Linker bricht sonst ab; Tabelle im README).
+    `TCP_SND_BUF_MSS` 16 ist bis RX 20 vermessen (Tabelle im README). Was nicht passt, lehnt
+    die Konfiguration ab, bevor gebaut wird, und nennt den größten zulässigen RX-Ring
+    (`This lab configuration does not fit the board's SRAM …`).
     Meldet der Linker beim Befehl oben `` section `.dmaram' will not fit in region `RAM' ``, fehlt eurem Arbeitsbereich eine Korrektur der Vorlage: [Korrekturen der Vorlage holen](../reference/firmware-lab-image.md#korrekturen-der-vorlage-holen).
 
 | Befehl | Wirkung |
@@ -336,8 +338,11 @@ Leserate bleibt das Fenster für immer zu.
   Verbindung zur Zeit an – `tcp-send` nicht parallel starten.
 - **Build-Option wirkt nicht:** Sie gilt für den ganzen Build-Ordner und
   bleibt dort stehen. `lab 08 info` zeigt, was wirklich geflasht ist.
-- **1460/32 mit `TCP_SND_BUF_MSS` 16 geht nur bis RX 20:** größere Ringe passen nicht mehr ins SRAM,
-  der Linker bricht ab (Tabelle im README).
+- **`This lab configuration does not fit the board's SRAM`:** Die Kombination passt nicht ins SRAM.
+  Die Konfiguration bricht ab, bevor gebaut wird, und nennt den größten zulässigen RX-Ring, z. B. für
+  1460/32 mit `TCP_SND_BUF_MSS` 16 und RX 32: `RX ring can be at most -DCADS_RNLAB_ETH_RX_COUNT=21`.
+  Vermessen ist diese Kombination bis RX 20 (Tabelle im README). Werte außerhalb des Bereichs
+  meldet sie als `CADS_RNLAB_ETH_RX_COUNT must be 4..32, got 33`.
 - **Überlauf in `window_limit`:** 4288 · 8 · 10⁶ passt nicht in 32 Bit – der
   Test `test_window_limit_no_overflow` zeigt es.
 - **Leserate unter 100 B/s bleibt bei 0:** In ganzen Byte ergibt
