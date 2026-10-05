@@ -122,6 +122,10 @@ Hochschule:
 4. Ab jetzt je Versuch committen und pushen; eure Stellen im Quelltext sind mit
    `TODO(LNN)` markiert (z. B. `TODO(L01)`).
 
+Korrekturen an der Vorlage kommen nicht von selbst in euren Arbeitsbereich.
+Wie ihr sie über das Remote `vorlage` holt, steht in
+[Korrekturen der Vorlage holen](../reference/firmware-lab-image.md#korrekturen-der-vorlage-holen).
+
 ### 3. Bauen
 
 *☰ → Terminal → Run Task…* → **CaDS: Build** (die Tasks `CaDS: …` richtet das

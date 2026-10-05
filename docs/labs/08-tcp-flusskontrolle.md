@@ -100,6 +100,7 @@ Nach dem Versuch könnt ihr …
     auf `-DCADS_RNLAB_TCP_MSS=536 -DCADS_RNLAB_TCP_WND_MSS=8 -DCADS_RNLAB_TCP_SND_BUF_MSS=4 -DCADS_RNLAB_ETH_RX_COUNT=8`
     zurücksetzen. Nicht jede Kombination passt ins SRAM: 1460/32 mit
     `TCP_SND_BUF_MSS` 16 geht nur bis RX 20 (der Linker bricht sonst ab; Tabelle im README).
+    Meldet der Linker beim Befehl oben `` section `.dmaram' will not fit in region `RAM' ``, fehlt eurem Arbeitsbereich eine Korrektur der Vorlage: [Korrekturen der Vorlage holen](../reference/firmware-lab-image.md#korrekturen-der-vorlage-holen).
 
 | Befehl | Wirkung |
 |---|---|

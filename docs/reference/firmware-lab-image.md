@@ -64,6 +64,51 @@ lesen; die Links in den Versuchsbeschreibungen zeigen dorthin.
 3. Je Versuch committen und pushen; die Stellen, an denen ihr Code ergänzt,
    sind im Quelltext mit `TODO(LNN)` markiert (z. B. `TODO(L03)`).
 
+## Korrekturen der Vorlage holen
+
+Der Start der Umgebung gleicht den Arbeitsbereich nur mit eurem eigenen
+Repository ab. Korrekturen an der Vorlage
+([scimbe/cads-zero-firmware](https://github.com/scimbe/cads-zero-firmware/tree/praktikum/start),
+Branch `praktikum/start`) holt ihr selbst in euren Branch:
+
+1. Name und E-Mail-Adresse müssen im Repository gesetzt sein (ohne
+   `--global`, siehe
+   [Onboarding, Schritt 2](../labs/00-onboarding.md#2-arbeitsbereich-und-eigener-fork)):
+
+    ```bash
+    git config user.name "Vorname Nachname"
+    git config user.email "eure.adresse@example.org"
+    ```
+
+    Fehlen sie, scheitert der Merge mit
+    `fatal: unable to auto-detect email address`.
+
+2. Eigene Änderungen committen (`git status` zeigt, ob etwas offen ist).
+3. `git remote -v` zeigt, welches Remote auf
+   `github.com/scimbe/cads-zero-firmware` zeigt. Nach dem
+   [Fork-Schritt](../labs/00-onboarding.md#2-arbeitsbereich-und-eigener-fork)
+   heißt es `vorlage`, ohne ihn `origin`.
+4. Stand der Vorlage holen und in den eigenen Branch übernehmen:
+
+    ```bash
+    git fetch vorlage
+    git merge --no-edit vorlage/praktikum/start
+    ```
+
+    Heißt das Remote `origin`, lauten die Befehle `git fetch origin` und
+    `git merge --no-edit origin/praktikum/start`.
+
+5. Zur Kontrolle die Tasks **CaDS: Build** und **CaDS: Host tests (Rahmen)**
+   ausführen, dann in den eigenen Fork pushen.
+
+Meldet `git merge` einen Konflikt, haben die Vorlage und ihr dieselbe Stelle
+einer Datei geändert. Git markiert die Stelle in der Datei mit `<<<<<<<`,
+`=======` und `>>>>>>>`: oben steht eure Fassung, unten die der Vorlage. In
+den Funktionen, die ihr selbst ausgefüllt habt (`TODO(LNN)`), behaltet ihr
+eure Lösung; alles andere übernehmt ihr von der Vorlage. Danach die
+Markierungen entfernen, mit `git add <Datei>` und `git commit --no-edit`
+abschließen und Schritt 5 ausführen.
+
 ## Bauen, testen, flashen
 
 Über *☰ → Terminal → Run Task…* stehen die Tasks bereit: **CaDS: Build**
