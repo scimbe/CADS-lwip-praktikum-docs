@@ -107,17 +107,29 @@ Hochschule:
     `git push` ändert sich. Den Fork in einen anderen Ordner zu klonen geht
     auch, dort fehlen aber die vorbereiteten Tasks des Images.
 
-3. Name und E-Mail-Adresse für eure Commits im Arbeitsbereich setzen – ohne
-   `--global`, im Ordner `cads-zero`:
+3. Name und E-Mail-Adresse für eure Commits prüfen, im Ordner `cads-zero`:
+
+    ```bash
+    git config user.name
+    git config user.email
+    ```
+
+    Beide Befehle zeigen die Werte aus eurer Anmeldung am Portal; das
+    Firmware-Lab trägt sie beim Start ins Repository ein. Bleibt eine Ausgabe
+    leer oder soll sie anders lauten, setzt ihr die Werte selbst – ohne
+    `--global`:
 
     ```bash
     git config user.name "Vorname Nachname"
     git config user.email "eure.adresse@example.org"
     ```
 
-    Die Einstellung liegt damit im Repository. Das Abmelden übersteht nur der
-    Ordner `~/workspace`; `~/.gitconfig` (das Ziel von `--global`) gehört
-    nicht dazu.
+    Die Einstellung liegt damit im Repository, und ein Start der Umgebung
+    überschreibt sie nicht. Das Abmelden übersteht nur der Ordner
+    `~/workspace`; `~/.gitconfig` (das Ziel von `--global`) gehört nicht
+    dazu. Fehlen die Werte, scheitert `git commit` mit
+    `Author identity unknown` und
+    `fatal: unable to auto-detect email address`.
 
 4. Ab jetzt je Versuch committen und pushen; eure Stellen im Quelltext sind mit
    `TODO(LNN)` markiert (z. B. `TODO(L01)`).

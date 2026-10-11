@@ -40,9 +40,12 @@ Das Abmelden übersteht nur der Ordner `~/workspace`, also der Arbeitsbereich
 Alles andere im Home-Verzeichnis und in `/tmp` bleibt nicht erhalten. Daraus
 folgt:
 
-- Name und E-Mail-Adresse für Commits im Repository setzen, also
-  `git config user.name …` und `git config user.email …` **ohne** `--global`
-  im Ordner `cads-zero`; `~/.gitconfig` gehört nicht zu `~/workspace`.
+- Name und E-Mail-Adresse für Commits gehören ins Repository, nicht nach
+  `~/.gitconfig` (das liegt außerhalb von `~/workspace`). Das Firmware-Lab
+  trägt sie beim Start aus der Anmeldung am Portal dort ein;
+  `git config user.name` und `git config user.email` im Ordner `cads-zero`
+  zeigen sie. Wer sie ändert, setzt sie **ohne** `--global`
+  ([Onboarding, Schritt 2](../labs/00-onboarding.md#2-arbeitsbereich-und-eigener-fork)).
 - Regelmäßig committen und in den eigenen Fork pushen.
 
 ## Eigener Fork
@@ -71,17 +74,11 @@ Repository ab. Korrekturen an der Vorlage
 ([scimbe/cads-zero-firmware](https://github.com/scimbe/cads-zero-firmware/tree/praktikum/start),
 Branch `praktikum/start`) holt ihr selbst in euren Branch:
 
-1. Name und E-Mail-Adresse müssen im Repository gesetzt sein (ohne
-   `--global`, siehe
-   [Onboarding, Schritt 2](../labs/00-onboarding.md#2-arbeitsbereich-und-eigener-fork)):
-
-    ```bash
-    git config user.name "Vorname Nachname"
-    git config user.email "eure.adresse@example.org"
-    ```
-
-    Fehlen sie, scheitert der Merge mit
-    `fatal: unable to auto-detect email address`.
+1. Prüfen, dass `git config user.name` und `git config user.email` im
+   Ordner `cads-zero` Name und Adresse zeigen. Bleibt eine Ausgabe leer,
+   scheitert der Merge mit `Author identity unknown` und
+   `fatal: unable to auto-detect email address`; gesetzt werden die Werte wie
+   in [Onboarding, Schritt 2](../labs/00-onboarding.md#2-arbeitsbereich-und-eigener-fork).
 
 2. Eigene Änderungen committen (`git status` zeigt, ob etwas offen ist).
 3. `git remote -v` zeigt, welches Remote auf
