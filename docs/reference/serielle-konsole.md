@@ -33,8 +33,8 @@ Zum Dialog des Browsers (beobachtet unter Windows 11 mit Chrome):
   **STM32 STLink - ST-Link VCP Ctrl (COMx)** (serielle Konsole).
 - Der Dialog für die serielle Konsole erschien im Test erst beim **zweiten**
   Verbinden. Das ist ein bekanntes, noch offenes Verhalten, nicht der Sollablauf.
-- Der Browser merkt sich die Freigabe im Profil; danach erscheint kein Dialog
-  mehr. Auf einem geteilten Rechner oder in einem anderen Profil fragt er
+- Der Browser merkt sich die Freigabe im Profil, auch über das Abmelden
+  hinweg; danach erscheint kein Dialog mehr. Auf einem geteilten Rechner oder in einem anderen Profil fragt er
   wieder.
 - Nach dem Flashen füllt der Hilfetext des Boards die Konsole. Das ist kein
   Fehler.
@@ -68,10 +68,22 @@ Gut zu wissen:
     Dialog für die serielle Konsole erschien im Test erst dann.
 
 **Die Konsole ist leer**
-:   Prüfen, dass die Statusleiste `Board: verbunden` zeigt und die Konsole
-    geöffnet ist. Das Board sendet eure Eingabe nicht zurück (kein Echo); die
-    Ausgabe eines Befehls erscheint trotzdem. Nach dem Flashen ist die Konsole
-    dagegen von selbst voll: Der Hilfetext des Boards ist kein Fehler.
+:   In der Statusleiste muss `Board: verbunden` **und** `· Konsole` stehen.
+    Ohne serielle Freigabe ist die Konsole nicht leer, sondern zeigt
+    „[Konsole nicht offen – Board verbinden (Statusleiste) und Serial-Port
+    freigeben]“. Nach dem Flashen ist die Konsole dagegen von selbst voll: Der
+    Hilfetext des Boards ist kein Fehler.
+
+**Dialog abgebrochen**
+:   Die Benachrichtigung „The board could not be opened.“ bietet
+    **Erneut verbinden**.
+
+**Die Konsole bricht mit „[senden fehlgeschlagen: serial port is not open]“ ab**
+:   Erneut **Verbinden** ausführen.
+
+**Die Konsole reagiert einige Sekunden nicht**
+:   Einige Befehle (z. B. `lab 03 probe`) blockieren die Konsole für einige
+    Sekunden. Erst die Ausgabe abwarten, dann weitertippen.
 
 ## Lokal auf dem eigenen Rechner (Fallback)
 

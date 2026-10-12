@@ -194,8 +194,8 @@ NUCLEO-F429ZI):
 - Der Dialog für die serielle Konsole erschien im Test erst beim **zweiten**
   Verbinden. Das ist ein bekanntes, noch offenes Verhalten, nicht der Sollablauf:
   einfach noch einmal **CaDS Board: Verbinden** ausführen.
-- Der Browser merkt sich die Freigabe in eurem Browser-Profil; danach erscheint
-  kein Dialog mehr. Auf einem geteilten Rechner oder in einem anderen Profil
+- Der Browser merkt sich die Freigabe in eurem Browser-Profil, auch über das
+  Abmelden hinweg; danach erscheint kein Dialog mehr. Auf einem geteilten Rechner oder in einem anderen Profil
   fragt er wieder.
 
 Hilfe bei Problemen steht unter
@@ -218,11 +218,22 @@ Hilfe bei Problemen steht unter
     Chrome/Chromium greifen per WebUSB nur auf das ST-Link zu, wenn dessen
     Debug-Schnittstelle den **WinUSB**-Treiber hat. Fehlt er (Gerät erscheint
     im Dialog nicht oder lässt sich nicht öffnen), ist der gemessene Weg das
-    ST-Paket **STSW-LINK009** (`stlink_dbg_winusb.inf`, Version 2.2.0.0): Es
-    stellt WinUSB für die Debug-Schnittstelle bereit. Der serielle Port läuft
-    mit dem Treiber, den Windows selbst mitbringt; dafür ist nichts zu
-    installieren. Mit diesem Treiber liefen die Versuche 01 bis 11 unter
-    Windows 11 mit Chrome durch.
+    ST-Paket **STSW-LINK009**. Es richtet beide Schnittstellen ein:
+    `stlink_dbg_winusb.inf` (WinUSB für die Debug-Schnittstelle) und
+    `stlink_vcp.inf` (COM-Port der seriellen Konsole), jeweils Version 2.2.0.0.
+    Ob Windows den COM-Port ohne das ST-Paket von selbst bindet, wurde nicht
+    gemessen. Mit diesem Treiber funktionierten unter Windows 11 mit Chrome
+    Bauen, Flashen und die serielle Konsole in den Versuchen 00 bis 11. **Nicht
+    gemessen** sind die Netzmessungen vom eigenen Rechner (`ping`, `rnlab.py`,
+    Wireshark).
+
+    Die Treiberinstallation braucht einmalig Administratorrechte; erledigt sie
+    vor dem Termin. (Das wurde im Test nicht selbst gemessen, der Treiber war
+    dort schon installiert.)
+
+    Prüfzeile im Geräte-Manager: **ST-Link Debug** unter *USB-Geräte* und
+    **STMicroelectronics STLink Virtual COM Port (COMx)** unter *Anschlüsse
+    (COM & LPT)*.
 
     Alternativ lässt sich mit [Zadig](https://zadig.akeo.ie/) für „STM32
     STLink“ WinUSB installieren. Dieser Weg wurde im Test **nicht gemessen**.
