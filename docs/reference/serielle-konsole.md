@@ -25,6 +25,20 @@ USB an eurem Rechner.
    Statusleiste: `Board: verbunden` → **Konsole öffnen**.
 3. Befehle eintippen, z. B. `lab info`, mit <kbd>Enter</kbd> abschicken.
 
+Zum Dialog des Browsers (beobachtet unter Windows 11 mit Chrome):
+
+- Der Eintrag im Dialog muss erst **angeklickt** werden, erst dann wird die
+  Schaltfläche **Verbinden** aktiv.
+- Unter Windows heißen die Einträge **STM32 STLink** (Debug-Schnittstelle) und
+  **STM32 STLink - ST-Link VCP Ctrl (COMx)** (serielle Konsole).
+- Der Dialog für die serielle Konsole erschien im Test erst beim **zweiten**
+  Verbinden. Das ist ein bekanntes, noch offenes Verhalten, nicht der Sollablauf.
+- Der Browser merkt sich die Freigabe im Profil, auch über das Abmelden
+  hinweg; danach erscheint kein Dialog mehr. Auf einem geteilten Rechner oder in einem anderen Profil fragt er
+  wieder.
+- Nach dem Flashen füllt der Hilfetext des Boards die Konsole. Das ist kein
+  Fehler.
+
 Gut zu wissen:
 
 - Flashen und Konsole gehen **gleichzeitig**; die Konsole bleibt beim Flashen
@@ -35,6 +49,41 @@ Gut zu wissen:
   unten) die Schnittstelle öffnen kann.
 - Das Board gehört immer genau **einem** Browser-Tab. Für einen anderen Tab:
   `CaDS Board: Board freigeben (für einen anderen Tab)`.
+
+## Fehlerbehebung
+
+**Board wird nicht gefunden** (kein Eintrag im Dialog)
+:   Das Board hängt an der falschen USB-Buchse (es muss die des ST-Link sein),
+    ein anderer Tab oder ein ST-Werkzeug hält das Gerät, unter Windows fehlt der
+    WinUSB-Treiber (siehe
+    [Onboarding, Schritt 4](../labs/00-onboarding.md#4-board-verbinden-und-flashen)),
+    unter Linux die udev-Regel.
+
+**Schaltfläche „Verbinden“ ist grau**
+:   Den Eintrag im Dialog zuerst anklicken.
+
+**Kein Dialog erscheint**
+:   Hat der Browser die Freigabe schon im Profil gemerkt, fragt er nicht noch
+    einmal. Sonst **CaDS Board: Verbinden** ein zweites Mal ausführen: Der
+    Dialog für die serielle Konsole erschien im Test erst dann.
+
+**Die Konsole ist leer**
+:   In der Statusleiste muss `Board: verbunden` **und** `· Konsole` stehen.
+    Ohne serielle Freigabe ist die Konsole nicht leer, sondern zeigt
+    „[Konsole nicht offen – Board verbinden (Statusleiste) und Serial-Port
+    freigeben]“. Nach dem Flashen ist die Konsole dagegen von selbst voll: Der
+    Hilfetext des Boards ist kein Fehler.
+
+**Dialog abgebrochen**
+:   Die Benachrichtigung „The board could not be opened.“ bietet
+    **Erneut verbinden**.
+
+**Die Konsole bricht mit „[senden fehlgeschlagen: serial port is not open]“ ab**
+:   Erneut **Verbinden** ausführen.
+
+**Die Konsole reagiert einige Sekunden nicht**
+:   Einige Befehle (z. B. `lab 03 probe`) blockieren die Konsole für einige
+    Sekunden. Erst die Ausgabe abwarten, dann weitertippen.
 
 ## Lokal auf dem eigenen Rechner (Fallback)
 

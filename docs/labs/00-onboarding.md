@@ -164,6 +164,13 @@ gelöst habt.
 
 ### 4. Board verbinden und flashen
 
+!!! info "Lokal nötig"
+    Auf eurem Rechner installiert ihr nur **Chrome oder Chromium** (bzw. einen
+    Browser mit WebUSB und WebSerial) und – unter Windows – den
+    [Treiber für das ST-Link](#windows-treiber). Ein Agent, ein lokaler Dienst
+    oder OpenOCD ist **nicht** nötig; Bauen und Flashen laufen aus dem
+    Browser.
+
 Board per USB an die **ST-Link-Buchse** (Micro-USB am Nucleo) anschließen.
 Die Befehle stehen in der Befehlspalette (*F1*); dort erscheinen sie mit dem
 Präfix der Erweiterung, also z. B. als „CaDS: CaDS Board: Verbinden …“ – tippt
@@ -176,6 +183,23 @@ einfach „CaDS Board“.
 2. *F1* → **CaDS Board: Flash** (flasht `build/itsboard/cads-zero.bin`) oder
    die Task **CaDS: Build + Flash**. Fortschritt und Ergebnis erscheinen als
    Benachrichtigung („Flash ok: … Bytes“).
+
+Zum Dialog des Browsers (beobachtet unter Windows 11 mit Chrome und dem
+NUCLEO-F429ZI):
+
+- Der Eintrag im Dialog muss erst **angeklickt** werden; vorher ist die
+  Schaltfläche **Verbinden** grau.
+- Die Einträge heißen unter Windows **STM32 STLink** (Debug-Schnittstelle, USB)
+  und **STM32 STLink - ST-Link VCP Ctrl (COMx)** (serielle Konsole).
+- Der Dialog für die serielle Konsole erschien im Test erst beim **zweiten**
+  Verbinden. Das ist ein bekanntes, noch offenes Verhalten, nicht der Sollablauf:
+  einfach noch einmal **CaDS Board: Verbinden** ausführen.
+- Der Browser merkt sich die Freigabe in eurem Browser-Profil, auch über das
+  Abmelden hinweg; danach erscheint kein Dialog mehr. Auf einem geteilten Rechner oder in einem anderen Profil
+  fragt er wieder.
+
+Hilfe bei Problemen steht unter
+[Serielle Konsole, Fehlerbehebung](../reference/serielle-konsole.md#fehlerbehebung).
 
 === "macOS"
 
@@ -190,10 +214,30 @@ einfach „CaDS Board“.
 
 === "Windows"
 
+    <span id="windows-treiber"></span>
     Chrome/Chromium greifen per WebUSB nur auf das ST-Link zu, wenn dessen
     Debug-Schnittstelle den **WinUSB**-Treiber hat. Fehlt er (Gerät erscheint
-    im Dialog nicht oder lässt sich nicht öffnen), mit
-    [Zadig](https://zadig.akeo.ie/) für „STM32 STLink“ WinUSB installieren.
+    im Dialog nicht oder lässt sich nicht öffnen), ist der gemessene Weg das
+    ST-Paket **STSW-LINK009**. Es richtet beide Schnittstellen ein:
+    `stlink_dbg_winusb.inf` (WinUSB für die Debug-Schnittstelle) und
+    `stlink_vcp.inf` (COM-Port der seriellen Konsole), jeweils Version 2.2.0.0.
+    Ob Windows den COM-Port ohne das ST-Paket von selbst bindet, wurde nicht
+    gemessen. Mit diesem Treiber funktionierten unter Windows 11 mit Chrome
+    Bauen, Flashen und die serielle Konsole in den Versuchen 00 bis 11. **Nicht
+    gemessen** sind die Netzmessungen vom eigenen Rechner (`ping`, `rnlab.py`,
+    Wireshark).
+
+    Die Treiberinstallation braucht einmalig Administratorrechte; erledigt sie
+    vor dem Termin. (Das wurde im Test nicht selbst gemessen, der Treiber war
+    dort schon installiert.)
+
+    Prüfzeile im Geräte-Manager: **ST-Link Debug** unter *USB-Geräte* und
+    **STMicroelectronics STLink Virtual COM Port (COMx)** unter *Anschlüsse
+    (COM & LPT)*.
+
+    Alternativ lässt sich mit [Zadig](https://zadig.akeo.ie/) für „STM32
+    STLink“ WinUSB installieren. Dieser Weg wurde im Test **nicht gemessen**.
+
     STM32CubeProgrammer und andere ST-Werkzeuge vorher schließen.
 
 === "Linux"
@@ -226,6 +270,9 @@ trotzdem `lab`-Befehle an. Eingeben:
 ```text
 lab info
 ```
+
+Nach dem Flashen füllt der Hilfetext des Boards die Konsole. Das ist kein
+Fehler.
 
 Die Konsole braucht kein Netz. Sie ist euer Rettungsweg, wenn später einmal
 die Telnet-Verbindung abreißt (z. B. in Versuch 03).
@@ -414,6 +461,8 @@ kommen die Zähler `rx`/`tx` her?
 - **Kein Board im WebUSB-Dialog:** falsche USB-Buchse (es muss die des
   ST-Link sein), anderer Tab oder ein ST-Werkzeug hält das Gerät, unter
   Windows fehlt WinUSB, unter Linux die udev-Regel.
+- **Schaltfläche „Verbinden“ grau, kein Dialog oder leere Konsole:** siehe
+  [Serielle Konsole, Fehlerbehebung](../reference/serielle-konsole.md#fehlerbehebung).
 - **`telnet` statt `rnlab.py`:** Einige `telnet`-Clients handeln beim
   Verbinden Optionen aus; nutzt `rnlab.py` oder `nc`
   ([rnlab.py-Referenz](../reference/rnlab-tool.md#lab-telnet)).
