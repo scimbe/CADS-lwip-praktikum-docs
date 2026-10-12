@@ -30,8 +30,7 @@ Zum Dialog des Browsers (beobachtet unter Windows 11 mit Chrome):
 - Der Eintrag im Dialog muss erst **angeklickt** werden, erst dann wird die
   Schaltfläche **Verbinden** aktiv.
 - Unter Windows heißen die Einträge **STM32 STLink** (Debug-Schnittstelle) und
-  **STM32 STLink - ST-Link VCP Ctrl (COMx)** (serielle Konsole). Für die
-  Konsole ist der zweite Eintrag zu wählen.
+  **STM32 STLink - ST-Link VCP Ctrl (COMx)** (serielle Konsole).
 - Der Dialog für die serielle Konsole erschien im Test erst beim **zweiten**
   Verbinden. Das ist ein bekanntes, noch offenes Verhalten, nicht der Sollablauf.
 - Der Browser merkt sich die Freigabe im Profil; danach erscheint kein Dialog

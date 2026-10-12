@@ -261,7 +261,7 @@ lab info
 ```
 
 Nach dem Flashen füllt der Hilfetext des Boards die Konsole. Das ist kein
-Fehler, sondern die normale Ausgabe des Boards.
+Fehler.
 
 Die Konsole braucht kein Netz. Sie ist euer Rettungsweg, wenn später einmal
 die Telnet-Verbindung abreißt (z. B. in Versuch 03).
