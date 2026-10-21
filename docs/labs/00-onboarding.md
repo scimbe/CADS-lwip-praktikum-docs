@@ -85,54 +85,229 @@ VS Code öffnet den Arbeitsbereich `cads-zero` (Ordner
 `/home/coder/workspace/cads-zero`). Er enthält die Firmware auf dem Branch
 `praktikum/start`, samt Submodulen und vorbereiteten Tasks – ihr müsst nichts
 klonen. `origin` zeigt dort auf die öffentliche Vorlage. Eure Änderungen
-gehören in euren eigenen Fork **`cads-zero-firmware`** im GitLab der
-Hochschule:
+gehören in euer eigenes Projekt im GitLab der Hochschule, eine Kopie der
+Vorlage (im Folgenden „Fork“). Der Umzug dorthin ist einmalig und läuft
+vollständig im **Terminal des Firmware-Labs** (*☰ → Terminal → New
+Terminal*, Ordner `cads-zero`) und im GitLab im Browser.
 
-1. Im GitLab die Vorlage `cads-zero-firmware` in euren Namespace **forken**
-   (einmalig).
-2. Im Terminal (*☰ → Terminal → New Terminal*) den Arbeitsbereich mit eurem
-   Fork verbinden:
+Platzhalter in diesem Abschnitt: `<GitLab-Adresse>` ist die Adresse des
+GitLab, `<euer-benutzername>` euer GitLab-Benutzername, `<euer-projekt>` der
+Name eures Projekts (z. B. `cads-zero-firmware`).
+
+#### Normalweg
+
+1. **Projekt anlegen** im GitLab: *New project → Import project →
+   Repository by URL* (*Neues Projekt → Projekt importieren → Repository per
+   URL*) mit der Git-Repository-URL der Vorlage
+   `https://github.com/scimbe/cads-zero-firmware.git` (öffentlich, ohne
+   Benutzername und Passwort), Sichtbarkeit *Private*. Der Import übernimmt
+   alle Branches, auch `praktikum/start`. Wer stattdessen ein *Blank project*
+   (*Leeres Projekt*) anlegt, wählt das Häkchen *Initialize repository with
+   a README* ab; ein schon so angelegtes Projekt behandelt
+   [Sonderfall C](#sonderfalle-und-fehlerbilder).
+
+2. **Zugangstoken anlegen** im GitLab: Avatar → *Edit profile → Access
+   tokens* (*Profil bearbeiten → Zugriffstoken*) → *Add new token*:
+    - Name frei, z. B. `lab`,
+    - ein Ablaufdatum, das zur Nutzung passt (z. B. das Ende des Praktikums),
+    - fragt das Formular nach einer Rolle: `Developer`,
+    - Scopes `read_repository` und `write_repository`.
+
+    GitLab zeigt das Token nur einmal – sofort kopieren. Es ersetzt beim
+    Zugriff von git das Passwort (siehe Kasten).
+
+    !!! question "Welches Passwort erwartet git?"
+        Git meldet sich über HTTPS mit `Username` und `Password` an. In
+        `Username` gehört euer GitLab-Benutzername (nicht die
+        E-Mail-Adresse), in `Password` das **Zugangstoken** aus diesem
+        Schritt – das ist der Weg, den diese Anleitung vorsieht. Das
+        Passwort, mit dem ihr euch im Browser anmeldet, nimmt git nur an,
+        wenn das GitLab das zulässt, und nie bei Zwei-Faktor-Anmeldung; im
+        Lab hat es nichts verloren. Nur manche Umgebungen des Portals melden
+        git ohne Eingabe an ([Sonderfall F](#sonderfalle-und-fehlerbilder)).
+
+3. **Remotes umstellen** – `origin` wird euer Projekt, die Vorlage heißt
+   danach `vorlage`:
 
     ```bash
-    git remote -v                                   # zeigt, wohin origin zeigt
+    git remote -v                                   # origin zeigt noch auf die Vorlage
     git remote rename origin vorlage
-    git remote add origin <HTTPS-Adresse eures Forks>
+    git remote add origin https://<GitLab-Adresse>/<euer-benutzername>/<euer-projekt>.git
+    git config credential.helper 'cache --timeout=28800'   # Token 8 h im Speicher, nie auf Platte
+    ```
+
+    Die Adresse endet auf `.git`. Der `credential.helper` hält das Token
+    nur im Arbeitsspeicher der Umgebung: bis zum Abmelden, höchstens acht
+    Stunden lang, fragt git nicht erneut, und keine Datei enthält es.
+
+4. **Vollständigen Verlauf holen**: Der Arbeitsbereich kann mit gekürztem
+   Verlauf angelegt sein, und einen solchen Stand nimmt das GitLab nicht
+   an.
+
+    ```bash
+    git rev-parse --is-shallow-repository           # true = Verlauf gekürzt
+    git fetch --unshallow vorlage                   # nur bei true
+    ```
+
+5. **Projekt abrufen und anmelden**:
+
+    ```bash
     git fetch origin
-    git switch praktikum/start 2>/dev/null || git switch -c praktikum/start --track origin/praktikum/start
-    git branch --set-upstream-to=origin/praktikum/start
+    git ls-remote origin                            # listet die Branches eures Projekts
+    ```
+
+    Beim ersten Zugriff fragt git nach Benutzername und Token, hier am
+    Beispiel des Benutzernamens `mmuster`:
+
+    ```text
+    Username for 'https://<GitLab-Adresse>': mmuster
+    Password for 'https://mmuster@<GitLab-Adresse>':      ← Token einfügen, es bleibt unsichtbar
+    ```
+
+    Die Frage steht im Terminal oder als Eingabefeld oben in der Mitte des
+    Fensters; solange niemand antwortet, zeigt das Terminal nur den Cursor
+    ([Sonderfall A](#sonderfalle-und-fehlerbilder)).
+
+6. **Branch `praktikum/start` verbinden** – je nachdem, was
+   `git ls-remote origin` zeigt:
+
+    - Zeile `refs/heads/praktikum/start` vorhanden (importiertes Projekt):
+
+        ```bash
+        git switch praktikum/start 2>/dev/null || git switch -c praktikum/start --track origin/praktikum/start
+        git branch --set-upstream-to=origin/praktikum/start
+        ```
+
+    - nur `HEAD` und `refs/heads/main` oder gar nichts (leer angelegtes
+      Projekt): den Branch aus dem Arbeitsbereich ins Projekt schieben, das
+      setzt zugleich den Upstream:
+
+        ```bash
+        git push -u origin praktikum/start
+        ```
+
+7. **Submodule holen**:
+
+    ```bash
     git submodule update --init --recursive        # lwIP und littlefs
     ```
 
-    Der Arbeitsbereich behält dabei Stand, Build und Tasks; nur das Ziel von
-    `git push` ändert sich. Den Fork in einen anderen Ordner zu klonen geht
-    auch, dort fehlen aber die vorbereiteten Tasks des Images.
+8. **Standard-Branch umstellen** im GitLab: *Settings → Repository → Branch
+   defaults* (*Einstellungen → Repository → Standard-Branch*) auf
+   `praktikum/start`. Ein vorhandener Branch `main` kann stehen bleiben.
 
-3. Name und E-Mail-Adresse für eure Commits prüfen, im Ordner `cads-zero`:
+Der Arbeitsbereich behält dabei Stand, Build und Tasks; nur das Ziel von
+`git push` ändert sich. Den Fork in einen anderen Ordner zu klonen geht
+auch, dort fehlen aber die vorbereiteten Tasks des Images.
 
-    ```bash
-    git config user.name
-    git config user.email
-    ```
+#### Name und E-Mail-Adresse für Commits
 
-    Beide Befehle zeigen die Werte aus eurer Anmeldung am Portal; das
-    Firmware-Lab trägt sie beim Start ins Repository ein. Bleibt eine Ausgabe
-    leer oder soll sie anders lauten, setzt ihr die Werte selbst – ohne
-    `--global`:
+Im Ordner `cads-zero` prüfen:
 
-    ```bash
-    git config user.name "Vorname Nachname"
-    git config user.email "eure.adresse@example.org"
-    ```
+```bash
+git config user.name
+git config user.email
+```
 
-    Die Einstellung liegt damit im Repository, und ein Start der Umgebung
-    überschreibt sie nicht. Das Abmelden übersteht nur der Ordner
-    `~/workspace`; `~/.gitconfig` (das Ziel von `--global`) gehört nicht
-    dazu. Fehlen die Werte, scheitert `git commit` mit
-    `Author identity unknown` und
-    `fatal: unable to auto-detect email address`.
+Beide Befehle zeigen die Werte aus eurer Anmeldung am Portal; das
+Firmware-Lab trägt sie beim Start ins Repository ein. Bleibt eine Ausgabe
+leer oder soll sie anders lauten, setzt ihr die Werte selbst – ohne
+`--global`:
 
-4. Ab jetzt je Versuch committen und pushen; eure Stellen im Quelltext sind mit
-   `TODO(LNN)` markiert (z. B. `TODO(L01)`).
+```bash
+git config user.name "Vorname Nachname"
+git config user.email "eure.adresse@example.org"
+```
+
+Die Einstellung liegt damit im Repository, und ein Start der Umgebung
+überschreibt sie nicht. Das Abmelden übersteht nur der Ordner
+`~/workspace`; `~/.gitconfig` (das Ziel von `--global`) gehört nicht
+dazu. Fehlen die Werte, scheitert `git commit` mit
+`Author identity unknown` und
+`fatal: unable to auto-detect email address`.
+
+Ab jetzt je Versuch committen und pushen; eure Stellen im Quelltext sind mit
+`TODO(LNN)` markiert (z. B. `TODO(L01)`).
+
+#### Sonderfälle und Fehlerbilder
+
+!!! warning "A · `git fetch` oder `git push` scheint zu hängen"
+    **Erkennen:** Das Terminal zeigt nach dem Befehl nur den Cursor, ohne
+    Meldung.
+
+    **Ursache:** git wartet auf Benutzername und Token; die Frage steht als
+    Eingabefeld oben in der Mitte des Fensters.
+
+    **Lösung:** dort eingeben. Ist kein Feld zu sehen: `Strg+C`, dann
+    `GIT_ASKPASS= git fetch origin` – git fragt jetzt im Terminal. Zur
+    Prüfung ohne jede Abfrage meldet
+    `GIT_ASKPASS= GIT_TERMINAL_PROMPT=0 git ls-remote origin` sofort
+    `fatal: could not read Username for 'https://<GitLab-Adresse>': terminal prompts disabled`,
+    solange git keine Zugangsdaten hat.
+
+!!! warning "B · `Authentication failed` oder `HTTP Basic: Access denied`"
+    **Erkennen:** `fatal: Authentication failed for 'https://<GitLab-Adresse>/…'`.
+
+    **Ursache:** Passwort statt Token eingegeben, falscher Benutzername
+    (z. B. die E-Mail-Adresse), Token abgelaufen oder widerrufen, oder dem
+    Token fehlen `read_repository`/`write_repository`.
+
+    **Lösung:** Benutzernamen prüfen, bei Bedarf ein neues Token anlegen
+    (Schritt 2) und den Befehl wiederholen – git fragt erneut.
+
+!!! warning "C · `the requested upstream branch 'origin/praktikum/start' does not exist`"
+    **Erkennen:** `git fetch origin` läuft fehlerfrei, `git ls-remote origin`
+    zeigt nur `HEAD` und `refs/heads/main`, und
+    `git branch --set-upstream-to=origin/praktikum/start` meldet
+    `fatal: the requested upstream branch 'origin/praktikum/start' does not exist`.
+
+    **Ursache:** Das Projekt wurde leer bzw. mit *Initialize repository with
+    a README* angelegt statt per Import der Vorlage; es enthält nur `main`
+    mit einer Startdatei.
+
+    **Lösung:** `git push -u origin praktikum/start` legt den Branch an –
+    ohne Konflikt, weil er anders heißt als `main` –, danach
+    `git submodule update --init --recursive` und den Standard-Branch auf
+    `praktikum/start` stellen (Schritt 8). `main` kann stehen bleiben.
+
+!!! warning "D · `remote rejected … (shallow update not allowed)`"
+    **Erkennen:** `git push -u origin praktikum/start` überträgt Objekte und
+    endet mit
+    `! [remote rejected] praktikum/start -> praktikum/start (shallow update not allowed)`;
+    `git rev-parse --is-shallow-repository` zeigt `true`.
+
+    **Ursache:** Der Arbeitsbereich hat nur einen gekürzten Verlauf; das
+    GitLab nimmt keinen Branch an, dessen Vorgänger fehlen.
+
+    **Lösung:** `git fetch --unshallow vorlage`, dann den Push wiederholen,
+    danach `git submodule update --init --recursive`. Im Normalweg steht
+    dieser Schritt deshalb vor dem ersten Push (Schritt 4).
+
+!!! warning "E · `warning: redirecting to https://<GitLab-Adresse>/…/<euer-projekt>.git/`"
+    **Erkennen:** Die Warnung erscheint bei jedem Zugriff, die Befehle
+    laufen trotzdem.
+
+    **Ursache:** Die Remote-Adresse endet nicht auf `.git`.
+
+    **Lösung:** harmlos; beheben mit
+    `git remote set-url origin https://<GitLab-Adresse>/<euer-benutzername>/<euer-projekt>.git`.
+
+!!! info "F · Anmeldung ohne Eingabe"
+    **Erkennen:** `ls /run/cads-git-cred/` zeigt eine Datei `broker.sock`.
+
+    **Ursache:** Manche Umgebungen des Portals reichen eine Anmeldung am
+    GitLab an git weiter; dann fragt git nicht nach Benutzername und Token.
+
+    **Lösung:** nichts zu tun. Fehlt `broker.sock`, gilt der Normalweg mit
+    Zugangstoken – in den meisten Umgebungen ist das so.
+
+!!! danger "G · Was ihr nie tun solltet"
+    - `git push --force` auf euer Projekt: Er überschreibt Branches samt
+      eurer Arbeit; keiner der Fälle oben braucht ihn.
+    - Das Token in Dateien, in die Remote-Adresse
+      (`https://name:token@…`), in Chats oder auf Screenshots bringen. Ist es
+      doch einmal sichtbar geworden: im GitLab unter *Access tokens*
+      widerrufen (*Revoke*) und ein neues anlegen.
 
 Korrekturen an der Vorlage kommen nicht von selbst in euren Arbeitsbereich.
 Wie ihr sie über das Remote `vorlage` holt, steht in
@@ -164,13 +339,6 @@ gelöst habt.
 
 ### 4. Board verbinden und flashen
 
-!!! info "Lokal nötig"
-    Auf eurem Rechner installiert ihr nur **Chrome oder Chromium** (bzw. einen
-    Browser mit WebUSB und WebSerial) und – unter Windows – den
-    [Treiber für das ST-Link](#windows-treiber). Ein Agent, ein lokaler Dienst
-    oder OpenOCD ist **nicht** nötig; Bauen und Flashen laufen aus dem
-    Browser.
-
 Board per USB an die **ST-Link-Buchse** (Micro-USB am Nucleo) anschließen.
 Die Befehle stehen in der Befehlspalette (*F1*); dort erscheinen sie mit dem
 Präfix der Erweiterung, also z. B. als „CaDS: CaDS Board: Verbinden …“ – tippt
@@ -183,23 +351,6 @@ einfach „CaDS Board“.
 2. *F1* → **CaDS Board: Flash** (flasht `build/itsboard/cads-zero.bin`) oder
    die Task **CaDS: Build + Flash**. Fortschritt und Ergebnis erscheinen als
    Benachrichtigung („Flash ok: … Bytes“).
-
-Zum Dialog des Browsers (beobachtet unter Windows 11 mit Chrome und dem
-NUCLEO-F429ZI):
-
-- Der Eintrag im Dialog muss erst **angeklickt** werden; vorher ist die
-  Schaltfläche **Verbinden** grau.
-- Die Einträge heißen unter Windows **STM32 STLink** (Debug-Schnittstelle, USB)
-  und **STM32 STLink - ST-Link VCP Ctrl (COMx)** (serielle Konsole).
-- Der Dialog für die serielle Konsole erschien im Test erst beim **zweiten**
-  Verbinden. Das ist ein bekanntes, noch offenes Verhalten, nicht der Sollablauf:
-  einfach noch einmal **CaDS Board: Verbinden** ausführen.
-- Der Browser merkt sich die Freigabe in eurem Browser-Profil, auch über das
-  Abmelden hinweg; danach erscheint kein Dialog mehr. Auf einem geteilten Rechner oder in einem anderen Profil
-  fragt er wieder.
-
-Hilfe bei Problemen steht unter
-[Serielle Konsole, Fehlerbehebung](../reference/serielle-konsole.md#fehlerbehebung).
 
 === "macOS"
 
@@ -214,30 +365,10 @@ Hilfe bei Problemen steht unter
 
 === "Windows"
 
-    <span id="windows-treiber"></span>
     Chrome/Chromium greifen per WebUSB nur auf das ST-Link zu, wenn dessen
     Debug-Schnittstelle den **WinUSB**-Treiber hat. Fehlt er (Gerät erscheint
-    im Dialog nicht oder lässt sich nicht öffnen), ist der gemessene Weg das
-    ST-Paket **STSW-LINK009**. Es richtet beide Schnittstellen ein:
-    `stlink_dbg_winusb.inf` (WinUSB für die Debug-Schnittstelle) und
-    `stlink_vcp.inf` (COM-Port der seriellen Konsole), jeweils Version 2.2.0.0.
-    Ob Windows den COM-Port ohne das ST-Paket von selbst bindet, wurde nicht
-    gemessen. Mit diesem Treiber funktionierten unter Windows 11 mit Chrome
-    Bauen, Flashen und die serielle Konsole in den Versuchen 00 bis 11. **Nicht
-    gemessen** sind die Netzmessungen vom eigenen Rechner (`ping`, `rnlab.py`,
-    Wireshark).
-
-    Die Treiberinstallation braucht einmalig Administratorrechte; erledigt sie
-    vor dem Termin. (Das wurde im Test nicht selbst gemessen, der Treiber war
-    dort schon installiert.)
-
-    Prüfzeile im Geräte-Manager: **ST-Link Debug** unter *USB-Geräte* und
-    **STMicroelectronics STLink Virtual COM Port (COMx)** unter *Anschlüsse
-    (COM & LPT)*.
-
-    Alternativ lässt sich mit [Zadig](https://zadig.akeo.ie/) für „STM32
-    STLink“ WinUSB installieren. Dieser Weg wurde im Test **nicht gemessen**.
-
+    im Dialog nicht oder lässt sich nicht öffnen), mit
+    [Zadig](https://zadig.akeo.ie/) für „STM32 STLink“ WinUSB installieren.
     STM32CubeProgrammer und andere ST-Werkzeuge vorher schließen.
 
 === "Linux"
@@ -270,9 +401,6 @@ trotzdem `lab`-Befehle an. Eingeben:
 ```text
 lab info
 ```
-
-Nach dem Flashen füllt der Hilfetext des Boards die Konsole. Das ist kein
-Fehler.
 
 Die Konsole braucht kein Netz. Sie ist euer Rettungsweg, wenn später einmal
 die Telnet-Verbindung abreißt (z. B. in Versuch 03).
@@ -461,8 +589,6 @@ kommen die Zähler `rx`/`tx` her?
 - **Kein Board im WebUSB-Dialog:** falsche USB-Buchse (es muss die des
   ST-Link sein), anderer Tab oder ein ST-Werkzeug hält das Gerät, unter
   Windows fehlt WinUSB, unter Linux die udev-Regel.
-- **Schaltfläche „Verbinden“ grau, kein Dialog oder leere Konsole:** siehe
-  [Serielle Konsole, Fehlerbehebung](../reference/serielle-konsole.md#fehlerbehebung).
 - **`telnet` statt `rnlab.py`:** Einige `telnet`-Clients handeln beim
   Verbinden Optionen aus; nutzt `rnlab.py` oder `nc`
   ([rnlab.py-Referenz](../reference/rnlab-tool.md#lab-telnet)).

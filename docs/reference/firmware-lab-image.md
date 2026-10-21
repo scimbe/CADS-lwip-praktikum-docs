@@ -56,8 +56,10 @@ GitLab-Namespace (gleicher Name wie die Vorlage), Grundlage ist der Branch
 [scimbe/cads-zero-firmware](https://github.com/scimbe/cads-zero-firmware/tree/praktikum/start)
 lesen; die Links in den Versuchsbeschreibungen zeigen dorthin.
 
-1. Im GitLab die Vorlage `cads-zero-firmware` in euren Namespace forken
-   (einmalig).
+1. Im GitLab ein Projekt `cads-zero-firmware` per *Import project →
+   Repository by URL* aus der Vorlage anlegen und ein Zugangstoken für git
+   erzeugen (einmalig, beides wie in
+   [Onboarding, Schritt 2](../labs/00-onboarding.md#2-arbeitsbereich-und-eigener-fork)).
 2. Der Arbeitsbereich `cads-zero` (Ordner `/home/coder/workspace/cads-zero`)
    enthält die Firmware auf `praktikum/start` (samt Submodulen und Tasks),
    klonen ist nicht nötig. `origin` zeigt dort auf die öffentliche Vorlage;
