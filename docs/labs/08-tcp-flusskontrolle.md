@@ -150,6 +150,7 @@ Nach dem Versuch könnt ihr …
     (`tcp.analysis.retransmission`) und seht euch unter *Statistiken →
     TCP-Stream-Graphen → Fenstergröße* bzw. *Zeit/Sequenz (Stevens)* an, wie
     die Daten kommen.
+
 5. **C – langsame Anwendung** (Standard-Build 536/8):
 
     ```bash
@@ -161,6 +162,7 @@ Nach dem Versuch könnt ihr …
     ```
 
     Wireshark-Filter: `tcp.analysis.window_full || tcp.analysis.window_update || tcp.analysis.zero_window`.
+
 6. **D – Anwendung hält an:** Übertragung starten, nach einer halben Sekunde
    `pause`, **15 s** warten, `resume`:
 
@@ -172,6 +174,7 @@ Nach dem Versuch könnt ihr …
 
     Unter Windows startet ihr `tcp-send` in einem zweiten Terminal. Filter:
     `tcp.analysis.zero_window || tcp.analysis.zero_window_probe || tcp.analysis.window_update`.
+
 7. **E – kürzeres Poll-Intervall:** `lab poll 2` lässt das Board im Menü alle
    2 ms statt alle 10 ms pollen (Vertiefung: `lab poll 1`). Wiederholt B für
    eure Varianten – die Messmatrix bekommt damit ihre dritte Achse. Nach dem
@@ -262,7 +265,7 @@ Senke `tcp_recved()` sofort im Callback – das funktioniert schon ohne eure
 Implementierung, damit ihr B vor C messen könnt.
 
 ```bash
-cmake --build build/host && ctest --test-dir build/host -L rnlab-L08 --output-on-failure
+cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L08$' --output-on-failure
 ```
 
 Ohne Implementierung zeigt `lab 08 calc` überall 0, und mit gesetzter

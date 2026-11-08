@@ -121,6 +121,8 @@ EtherType `0x0806`):
 3. **Zählen.** Über die **serielle Konsole** `lab 02 watch reset`, einmal
    `python3 tools/rnlab.py ping 192.168.33.99 -c 3`, dann seriell
    `lab 02 watch` (per Telnet würde die Sitzung selbst mitgezählt). Wie viele ARP-Pakete hat das Board gesehen bzw. gesendet?
+   Überlegt dabei, welche ARP-Tabellen aus Schritt 2 noch gefüllt sind – ein
+   kleiner Zählerstand ist dann kein Fehler eures Parsers.
 4. **Gratuitous ARP** senden und in Wireshark ansehen (Ziel-MAC, SPA, TPA,
    THA):
 
@@ -158,7 +160,10 @@ EtherType `0x0806`):
     TX-Hook und dem Reply im RX-Hook (beides ausgewertet mit eurem Parser).
     Die Punkte erscheinen alle 200 ms, solange das Board wartet.
 
-    Vergleicht mit der Zeitdifferenz Request → Reply in Wireshark.
+    Vergleicht mit der Zeitdifferenz Request → Reply in Wireshark und
+    beachtet, an welcher Stelle jeweils gemessen wird (Wireshark an der
+    Schnittstelle eures Rechners, das Board in seinen Treiber-Hooks).
+
 6. **Auflösung im Normalbetrieb (Rechner-Seite).** Über die **serielle
    Konsole** `lab 02 arp flush` und `lab 02 watch reset` eingeben, dann auf
    dem Rechner sofort `python3 tools/rnlab.py ping 192.168.33.99 -c 4`
@@ -166,6 +171,7 @@ EtherType `0x0806`):
    Anschließend seriell
    `lab 02 watch`. Wiederholt das fünfmal und notiert jeweils die erste und
    die folgenden RTTs.
+
 7. **Cache-Lebensdauer.** Seriell `lab 02 arp flush`, auf dem Rechner genau
    **ein** `python3 tools/rnlab.py ping 192.168.33.99 -c 1` (Uhrzeit
    notieren), danach **nur noch
@@ -174,7 +180,9 @@ EtherType `0x0806`):
    Telnet, kein Ping. Achtung: lwIP frischt einen vorhandenen Eintrag auch
    bei **jedem ARP-Paket** dieses Absenders auf, selbst bei einem Broadcast,
    der gar nicht dem Board gilt. Zeigt Wireshark in dieser Zeit ARP-Anfragen
-   eures Rechners, beginnt die Uhr von dort an neu.
+   eures Rechners, beginnt die Uhr von dort an neu. Fragt euer Rechner dabei
+   regelmäßig nach einer Adresse wie `.1`, ist am S1-Adapter ein Router
+   eingetragen – das Feld leeren ([Netz-Setup](../reference/netz-setup.md)).
 
 ## Erwartungswert (vor der Messung notieren!)
 
@@ -244,7 +252,7 @@ SPA `0.0.0.0` → `PROBE`; SPA = TPA → `GRATUITOUS` (Request- und Reply-Form);
 sonst `REQUEST` bzw. `REPLY`.
 
 ```bash
-cmake --build build/host && ctest --test-dir build/host -L rnlab-L02 --output-on-failure
+cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L02$' --output-on-failure
 ```
 
 Ohne Implementierung sind 28 der 34 Tests rot; `lab 02 arp`, `arp flush` und

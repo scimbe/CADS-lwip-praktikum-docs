@@ -108,3 +108,4 @@ nav:
       - "Serielle Konsole": reference/serielle-konsole.md
       - "rnlab.py – Host-Werkzeug": reference/rnlab-tool.md
       - "Firmware-Labor-Image": reference/firmware-lab-image.md
+      - "Board-Adresse im Labor BT 7.65": reference/labor-bt-7-65.md

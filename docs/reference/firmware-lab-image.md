@@ -117,13 +117,21 @@ und **CaDS: Lektionstests** die Tests eines Versuchs (fragt nach der Nummer).
 Die Tests gibt es auch im Terminal des code-servers:
 
 ```bash
-# Host-Tests eines Versuchs (reine Logik, ohne Board)
-ctest --test-dir build/host -L '^rnlab-L03$'
+# Host-Tests eines Versuchs (reine Logik, ohne Board); --preset legt
+# build/host an und ist nach einem frischen Start oder git clean noetig
+cmake --preset host && cmake --build build/host
+ctest --test-dir build/host -L '^rnlab-L03$' --output-on-failure
 ```
 
 Die Lektions-Tests sind auf `praktikum/start` absichtlich **rot**: sie werden
-grün, sobald eure Implementierung stimmt. Die genauen Build- und
-Flash-Befehle stehen im jeweiligen Versuch.
+grün, sobald eure Implementierung stimmt. Grün sein müssen jeweils die Tests
+des Versuchs, an dem ihr arbeitet; die der anderen Versuche bleiben rot, bis
+ihr dort angekommen seid.
+
+Gebaut und geflasht wird mit den Tasks **CaDS: Build** und **CaDS: Flash**
+(oder **CaDS: Build + Flash**). Vorher das Board in der Statusleiste unten
+verbinden: Klick auf **Board: getrennt** → *Board verbinden (USB/Serial
+freigeben)*; beim ersten Mal fragt der Browser nach dem ST-Link.
 
 Zum **Flashen** braucht ihr **Chrome oder Chromium**: Flashen (WebUSB) und
 serielle Konsole (WebSerial) sind dort erprobt; Firefox und Safari unterstützen

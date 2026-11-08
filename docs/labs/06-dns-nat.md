@@ -101,6 +101,7 @@ Nach dem Versuch könnt ihr …
 
     Zählt in Wireshark (Board-Seite) die DNS-Pakete je Aufruf. Vergleicht
     Größe und ID mit `lab 06 last`.
+
 4. **B – ein Cache mit einem Platz.**
 
     ```text
@@ -129,6 +130,7 @@ Nach dem Versuch könnt ihr …
 
     Notiert je Anfrage auf beiden Seiten: Quell-IP, Quellport, Ziel,
     DNS-ID, IP-TTL. Danach `lab 06 server <Adresse eures Rechners>`.
+
 8. **F – PAT (optional).** Während das Board auflöst, fragt euer Rechner selbst:
    `nslookup heise.de 1.1.1.1`. Wie hält die NAT-Box die beiden Antworten
    auseinander?
@@ -194,7 +196,7 @@ Fertig vorgegeben: `rnlab_l06_min_ttl()`, `rnlab_l06_find_dns()`,
 Tabelle ist in `dns.c` versteckt (`static`) und nicht auslesbar.
 
 ```bash
-cmake --build build/host && ctest --test-dir build/host -L rnlab-L06 --output-on-failure
+cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L06$' --output-on-failure
 ```
 
 !!! warning "Ein Paket, eine Endlosschleife"

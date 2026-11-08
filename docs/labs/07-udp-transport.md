@@ -207,7 +207,7 @@ Differenz `(int32_t)(seq - next)` – so macht es auch TCP mit seinen
 Sequenznummern (RFC 1982, RFC 9293).
 
 ```bash
-cmake --build build/host && ctest --test-dir build/host -L rnlab-L07 --output-on-failure
+cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L07$' --output-on-failure
 ```
 
 Ohne Implementierung zählt die Senke jedes Datagramm als „fehlerhaft“.

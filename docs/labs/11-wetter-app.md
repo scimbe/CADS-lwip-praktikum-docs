@@ -98,6 +98,7 @@ Nach dem Versuch könnt ihr …
     ```
 
     App öffnen, eine Minute zusehen, dann `lab 11 status`.
+
 4. **B – Fehlerzustände:** nacheinander
     - Testserver beenden (Verbindung abgelehnt) – Backoff in `lab 11 status`
       beobachten: 5 s, 10 s, 20 s, …,
@@ -107,9 +108,11 @@ Nach dem Versuch könnt ihr …
       abschalten.
 
     Notiert jeweils Statuszeile, Farbe und ob die alten Werte stehen bleiben.
+
 5. **C – Blit-Kosten (Vertiefung):** nur, wenn eure App ihre Redraws misst
     (optional, siehe `TODO(L11)` im Tick): Mit `--vary` und `interval 10`
     laufen lassen, nach einigen Abrufen `lab 11 status` (Zeile „Redraws“).
+
 6. **D – verlorene Frames (Vertiefung):** Board-Zähler lesen, UDP-Strom
     senden, Zähler wieder lesen – einmal ohne App (Menü steht still), einmal
     mit App bei `interval 10`:
@@ -131,6 +134,7 @@ Nach dem Versuch könnt ihr …
     gezählt werden sie trotzdem. **Nicht schneller als 200 1/s:** Die
     Hauptschleife leert den Empfangsring nur alle 10 ms; bei 1000 1/s gehen
     auch ohne Display Frames verloren.
+
 7. **E – Abnahme gegen `curl`** (S2, open-meteo): `lab 11 server`, App
     öffnen, **OK**; sofort danach am Rechner
 
@@ -266,7 +270,7 @@ Frames ergibt und dass im Leerlauf gar nichts
 übertragen wird.
 
 ```bash
-cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L11$' --output-on-failure
+cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L11$' --output-on-failure
 WETTER_PPM_DIR=/tmp ./build/host/tests/unit/test_wetter_app   # Bildschirmfotos als PPM
 ```
 

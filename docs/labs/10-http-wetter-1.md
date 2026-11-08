@@ -131,6 +131,7 @@ Nach dem Versuch könnt ihr …
     Unter Windows heißt es `curl.exe … -o NUL` statt `-o /dev/null`, die
     Variable setzt ihr mit `$URL="…"` (PowerShell), `rnlab.py` startet ihr mit
     `py tools\rnlab.py`. `-0` erzwingt HTTP/1.0.
+
 4. **B – lokal, ohne Internet:** Testserver starten (siehe Aufbau), dann
 
     ```bash
@@ -148,13 +149,16 @@ Nach dem Versuch könnt ihr …
     Konsolen-Prompt: App-Baum mit `lab key quit` verlassen, danach mit
     `lab key menu` zurück (siehe
     [serielle Konsole](../reference/serielle-konsole.md) und Versuch 04).
+
 5. **C – Fehlerfälle:** Testserver nacheinander mit `--fault 500`,
     `garbage`, `truncate`, `nojson`, `reset` starten und jeweils `get` +
     `show`; außerdem ein Port, auf dem niemand lauscht (`:8081`), und eine
     Adresse ohne Gerät (Zeitüberschreitung nach 10 s).
+
 6. **D – open-meteo über das Internet** (S2): `lab 10 get`, `lab 10 show`,
     sofort noch einmal (DNS-Cache!). In Wireshark die Pakete eines Abrufs
     zählen und den Ablauf als Sequenzdiagramm skizzieren.
+
 7. **E – curl vs. Board:** Werte aus A und D vergleichen.
 
 ## Erwartungswert (vor der Messung notieren!)

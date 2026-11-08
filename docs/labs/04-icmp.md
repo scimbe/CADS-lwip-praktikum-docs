@@ -84,6 +84,7 @@ Firmware-Aufgabe); die Vertiefungen danach sind für alle, die schneller sind.
 
     In Wireshark: Echo Request und Reply vergleichen (Identifier, Sequenz,
     Daten, Prüfsumme, TTL).
+
 5. **C – das Board pingt:**
 
     ```bash
@@ -102,6 +103,7 @@ Firmware-Aufgabe); die Vertiefungen danach sind für alle, die schneller sind.
     ```
 
     Zum Schluss `lab poll 10`.
+
 7. **E – TTL/traceroute:**
 
     ```bash
@@ -222,7 +224,7 @@ er an lwIP zurück, das sie ignoriert. `lab 04 delay` darf nicht blockieren
 `sys_timeout()` in lwIPs Timerliste geparkt.
 
 ```bash
-cmake --build build/host && ctest --test-dir build/host -L rnlab-L04 --output-on-failure
+cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L04$' --output-on-failure
 ```
 
 Ohne Implementierung verwirft `echo on` jede Anfrage als „fehlerhaft“, mit

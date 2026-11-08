@@ -17,7 +17,10 @@ USB an eurem Rechner.
 1. **Board verbinden** – einmal je Browser-Sitzung: in der Statusleiste unten
    auf `Board: getrennt` klicken und **Board verbinden (USB/Serial freigeben)**
    wählen, oder <kbd>F1</kbd> und `CaDS Board: Verbinden (USB/Serial freigeben)`.
-   Der Browser fragt nach dem Gerät; das Board (STMicroelectronics) auswählen.
+   Der Browser fragt **zweimal** – einmal nach dem USB-Gerät (zum Flashen) und
+   einmal nach der seriellen Schnittstelle (für die Konsole); beide Male das
+   Board (STMicroelectronics bzw. STLink) auswählen. Fehlt die zweite
+   Freigabe, flasht das Board, aber die Konsole bleibt stumm.
    Die Statusleiste zeigt danach `Board: verbunden`.
 2. **Konsole öffnen:** <kbd>F1</kbd>, `CaDS Board: Konsole öffnen` tippen,
    <kbd>Enter</kbd>. Es erscheint das Terminal **CaDS Board Console** (115200

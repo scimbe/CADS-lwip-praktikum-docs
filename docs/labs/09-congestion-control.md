@@ -156,6 +156,7 @@ Timeouts (`R`). Spalten:
 
     Unter Windows (PowerShell) startet ihr `tcp-recv` in einem zweiten
     Terminal. Läuft die Verbindung nicht an, blockiert die Firewall Port 7009.
+
 4. **B – regelmäßiger Verlust:** dasselbe mit `lab 09 loss 50`, `20` und `10`;
    nach jedem Lauf `status`, `calc` und die Trace (`python3 tools/l09_plot.py 192.168.33.99 n20` usw.).
 5. **C – zufälliger Verlust:** `lab 09 loss p 1`, `p 2` und `p 5`, jeweils
@@ -176,6 +177,7 @@ Timeouts (`R`). Spalten:
     Fenster größer als der Empfangsring, verwirft die Netzwerkkarte des
     Empfängers – dort reagiert die Überlastkontrolle des **Rechners**, die ihr
     im Mitschnitt (doppelte ACKs, Fast Retransmission) beobachten könnt.
+
 7. In Wireshark (Filter `tcp.port == 7009`): `tcp.analysis.duplicate_ack`,
    `tcp.analysis.fast_retransmission`, `tcp.analysis.retransmission`; unter
    *Statistiken → TCP-Stream-Graphen → Zeit/Sequenz (Stevens)* seht ihr
@@ -248,7 +250,7 @@ lwIP – Unterschiede in der Trace kommen aus den **Regeln**, nicht aus den
 Eingaben.
 
 ```bash
-cmake --build build/host && ctest --test-dir build/host -L rnlab-L09 --output-on-failure
+cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L09$' --output-on-failure
 ```
 
 Ohne Implementierung bleibt `model_cwnd` konstant, die Phase ist `?`,

@@ -23,6 +23,22 @@ cd CADS-lwip-praktikum-docs
 
 --8<-- "issue-feedback.md"
 
+### macOS: „No route to host“ trotz Ping
+
+macOS fragt nach der Berechtigung *Lokales Netzwerk*, bevor ein Programm
+Verbindungen in das eigene Netz aufbauen darf. Fehlt sie, scheitern `check`,
+`lab`, `udp-send`, `tcp-send` und `http` mit `[Errno 65] No route to host`,
+obwohl `ping` (das System-`ping`) und die Route stimmen.
+
+- *Systemeinstellungen → Datenschutz & Sicherheit → Lokales Netzwerk*: das
+  Programm erlauben, aus dem ihr `python3` startet (Terminal, iTerm, eure IDE),
+  und es danach neu starten.
+- Ohne die Freigabe erreicht ihr die Board-Befehle mit `nc`:
+
+    ```bash
+    (printf 'lab info\r\n'; sleep 2) | nc -w 3 192.168.33.99 4242
+    ```
+
 ## Aufruf
 
 === "macOS / Linux"

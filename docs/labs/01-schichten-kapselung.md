@@ -93,14 +93,14 @@ Nach dem Versuch könnt ihr …
     ```bash
     python3 tools/rnlab.py lab 192.168.33.99 "lab 01 clear"
     python3 tools/rnlab.py ping 192.168.33.99 -c 1 -s 32
-    python3 tools/rnlab.py lab 192.168.33.99 "lab 01 trace 2"
+    python3 tools/rnlab.py lab 192.168.33.99 "lab 01 trace 4"
     ```
 
     Erwartete Ausgabe (Zeiten, MAC-Adressen, die IP-Adresse eures Rechners –
     am Referenzplatz `.1` statt `.10` – und die IP-Kennung sind bei euch anders):
 
     ```text
-    > lab 01 trace 2
+    > lab 01 trace 4
     #1 RX t=6279 ms  74 B  [ok]
       OSI 2   Ethernet II A0:CE:C8:61:5D:08 > EE:5A:76:56:F0:9B  Typ 0x0800  14 B
               ee 5a 76 56 f0 9b a0 ce c8 61 5d 08 08 00
@@ -122,8 +122,17 @@ Nach dem Versuch könnt ihr …
     (CLI-Frames auf TCP 4242 nicht aufgezeichnet: 15)
     ```
 
+    Im Ring landet jeder Frame außer der Telnet-Sitzung, also auch
+    ARP-Anfragen oder Broadcasts eures Rechners; sucht die Zeilen mit ICMP.
+    Fragt euer Rechner im Mitschnitt immer wieder nach einer Adresse, die es
+    nicht gibt (z. B. `.1`), ist am S1-Adapter ein Router eingetragen – das
+    Feld bleibt leer ([Netz-Setup](../reference/netz-setup.md)).
+
     Vergleicht jede Byte-Zeile mit dem Paket in Wireshark. Wo steht die
-    Gesamtlänge `0x003c` = 60? Wo das Protokoll `01`?
+    Gesamtlänge `0x003c` = 60? Wo das Protokoll `01`? Das `ping` von macOS und
+    Linux legt einen Zeitstempel an den Anfang der Echo-Daten; Wireshark zeigt
+    ihn getrennt als „Timestamp from icmp data“ und zählt bei „Data“ nur den
+    Rest. Das Board zählt das ganze Datenfeld (= `-s`).
 
 3. Nachdem ihr den Erwartungswert (unten) notiert habt: dasselbe mit 0, 64
    und 1472 Byte Daten (`python3 tools/rnlab.py ping 192.168.33.99 -c 1 -s 0`,
@@ -180,7 +189,9 @@ Dateien in eurem Fork (Branch `praktikum/start`):
 - [`apps/rnlab/src/l01_schichten_kapselung_logic.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l01_schichten_kapselung_logic.c)
   mit Header
   [`l01_schichten_kapselung_logic.h`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l01_schichten_kapselung_logic.h):
-  reine Logik ohne lwIP, **hier arbeitet ihr** (beide Stellen `TODO(L01)`).
+  reine Logik ohne lwIP, **hier arbeitet ihr**: In der `.c`-Datei sind zwei
+  Funktionen mit `TODO(L01)` markiert; der Header beschreibt die Strukturen
+  und wird nur gelesen.
 - [`apps/rnlab/src/l01_schichten_kapselung.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l01_schichten_kapselung.c):
   Board-Integration, fertig. `rnlab_l01_hook_rx_frame()` und
   `rnlab_l01_hook_tx_frame()` rufen für jeden Frame euren Dekoder auf und
@@ -224,15 +235,23 @@ Anforderungen an `rnlab_decode_frame()`:
   Optionen!). Abgeschnitten → `RNLAB_L01_ERR_TRUNC_UPPER`, ungültig →
   `RNLAB_L01_ERR_BAD_UPPER`, ein Fragment mit Offset ≠ 0 hat gar keinen
   Transport-Header.
+- Maßstab für „abgeschnitten“ ist das **Paketende**, also das Minimum aus
+  Frame-Ende und 14 + IPv4-Gesamtlänge: Ein Transport-Header, der ins
+  Padding hineinragt oder mitten im Frame endet, ist `RNLAB_L01_ERR_TRUNC_UPPER`;
+  `RNLAB_L01_ERR_TRUNC_PAYLOAD` gilt nur, wenn alle Header vollständig sind.
+  `frame == NULL` behandelt ihr wie einen leeren Frame, `info == NULL` ergibt
+  `false`.
 - Nie außerhalb von `frame[0 .. len-1]` lesen. Was bis zum Fehler dekodiert
   wurde, bleibt in `info` stehen – der Trace zeigt dann die heilen Schichten
   und den Grund des Abbruchs.
 
 ```bash
-cmake --build build/host && ctest --test-dir build/host -L rnlab-L01 --output-on-failure
+cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L01$' --output-on-failure
 ```
 
-Solange die Aufgabe offen ist, sind 29 der 32 Tests rot, und `lab 01 trace`
+Solange die Aufgabe offen ist, sind 29 der 32 Tests rot (`ctest` meldet das
+als *einen* fehlgeschlagenen Test; die Zeile `32 Tests 29 Failures` darüber
+zeigt die Einzeltests), und `lab 01 trace`
 zeigt nur `[nicht dekodiert]` mit den rohen ersten Bytes – so seht ihr auf dem
 Board sofort, ob euer Dekoder läuft.
 
@@ -270,7 +289,8 @@ Board sofort, ob euer Dekoder läuft.
     Videoanwendungen trotzdem oft kleine Pakete?
 
 ??? example "Vertiefung (optional): Warum war ein empfangener Frame 4 B länger?"
-    Bei der ersten Referenzmessung (Firmware vor `praktikum/start` 41d52e9)
+    Bei der ersten Referenzmessung (Firmware vor `praktikum/start`
+    [41d52e9](https://github.com/scimbe/cads-zero-firmware/commit/41d52e9))
     war jeder **empfangene** Frame genau 4 Byte länger als der gesendete Frame
     desselben Pings, obwohl beide dasselbe IPv4-Paket trugen. Der Dekoder
     zeigte die 4 Byte hinter dem IPv4-Paket als „Padding“, und `lab 01 eff`
@@ -303,7 +323,8 @@ Board sofort, ob euer Dekoder läuft.
   ihr ein Feld lest.
 - **Nichts im Trace?** Frames der Telnet-Sitzung (Port 4242) werden bewusst
   nicht aufgezeichnet, und der Ring hält nur 16 Frames: erst `lab 01 clear`,
-  dann den Verkehr erzeugen, dann `lab 01 trace`.
+  dann den Verkehr erzeugen, dann `lab 01 trace`. `lab 01 eff` summiert
+  alle Frames im Ring – Hintergrundverkehr (ARP, mDNS) zählt mit.
 - **Bytes hinter dem IPv4-Paket:** Mindestframes kommen aufgefüllt an
   (60 B), und je nach Treiber können weitere Bytes hinter dem Paket stehen
   (siehe Vertiefung in der Auswertung). Bestimmt das Paketende deshalb immer aus der

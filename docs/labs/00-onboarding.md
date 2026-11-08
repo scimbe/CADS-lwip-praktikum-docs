@@ -6,6 +6,13 @@
     Dieser Versuch läuft im Netz-Setup **S1 – statische Adresse**
     (siehe [Netz-Setup](../reference/netz-setup.md#s1-statische-adresse)).
 
+!!! tip "Ihr arbeitet im Labor BT 7.65?"
+    Dort bekommt das Board eine eigene Adresse im Labornetz
+    (`172.16.2.N`, Maske `255.255.0.0`, Gateway `172.16.0.1`) statt der
+    Standardadresse `192.168.33.99`. Wie ihr sie in `config/factory.txt`
+    einträgt, neu baut und flasht, steht auf der Seite
+    [Board-Adresse im Labor BT 7.65](../reference/labor-bt-7-65.md).
+
 --8<-- "konventionen.md"
 
 In diesem ersten Termin richtet ihr die Werkzeugkette ein, die ihr in allen

@@ -93,6 +93,7 @@ in seinem eigenen Subnetz liegt, an seinen Router, das **Gateway**.
     siehe [serielle Konsole](../reference/serielle-konsole.md)).
     `lab 03 probe` zeigt die Zielklasse, den Next Hop, das ARP-Ergebnis für den
     Next Hop und ob ein Ping beantwortet wurde; jeder Schritt wartet höchstens 400 ms.
+
 5. Bei jeder Maske in Wireshark festhalten: Welche ARP-Anfragen stellt das
    Board (`who-has … tell 192.168.33.99`)? Kommen Echo Requests an, gehen
    Echo Replies raus?
@@ -169,7 +170,7 @@ Bei aktivem Filter und Quelle außerhalb des Präfixes gibt er `1` zurück und
 gibt den Puffer selbst frei (`pbuf_free`), dann sieht lwIP das Paket nie.
 
 ```bash
-cmake --build build/host && ctest --test-dir build/host -L rnlab-L03 --output-on-failure
+cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L03$' --output-on-failure
 ```
 
 Ohne Implementierung sind die Tests rot und das Board bleibt benutzbar:

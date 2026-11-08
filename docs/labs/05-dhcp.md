@@ -108,6 +108,7 @@ Nach dem Versuch könnt ihr …
     Ordnet jede Zeile von `lab 05 log` einem Paket in Wireshark zu. Notiert
     je Nachricht: Quell-/Ziel-IP, Broadcast-Flag, `xid`, Optionen 53, 50, 51,
     54, 1, 3, 6.
+
 4. **B – nach dem ACK.** Sucht in Wireshark die ARP-Pakete **nach** dem ACK.
    Wer sendet sie, mit welcher Absender-IP, in welchen Abständen? Ab wann zeigt
    `lab info` die Adresse, ab wann antwortet das Board auf `ping`?
@@ -121,6 +122,7 @@ Nach dem Versuch könnt ihr …
     ```
 
     Vergleicht den REQUEST mit dem aus A (Ziel-IP, `ciaddr`, Option 50/54).
+
 6. **D – ohne Server (Backoff).** Das Board soll keinen Server hören:
 
     ```text
@@ -132,6 +134,7 @@ Nach dem Versuch könnt ihr …
     Gut 2 Minuten warten, dann `lab 05 log` und `lab 05 dhcp`. Die
     Server-Antworten stehen als `rx*` im Protokoll, lwIP sieht sie nicht.
     Danach `lab 05 ignore off` und `lab net dhcp`.
+
 7. **E – Lease-Zeiten (optional).** Lest aus `lab 05 dhcp` die Lease eures Servers ab und
    vergleicht sie mit einem Kommilitonen, der ein anderes Betriebssystem
    nutzt.
@@ -202,7 +205,7 @@ Hook `rnlab_l05_hook_rx_drop()`: Er verwirft Server-Antworten (`op` 2) nach
 IP-Absender, bevor lwIP sie sieht.
 
 ```bash
-cmake --build build/host && ctest --test-dir build/host -L rnlab-L05 --output-on-failure
+cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L05$' --output-on-failure
 ```
 
 !!! warning "Die Bytes kommen aus dem Netz"
