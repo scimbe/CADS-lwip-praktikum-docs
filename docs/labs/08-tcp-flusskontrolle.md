@@ -207,9 +207,11 @@ zum Mittelwert der Ping-RTT? Rechnet *W*/*T* für eure Varianten.
 **4. Zweite Stufe: die Netzwerkkarte und die CPU.** Das Fenster ist nur die
 erste Grenze. Darunter liegen drei weitere:
 
-- **Ring/Poll:** Pro Poll kann das Board höchstens so viele Frames abholen, wie
-  im Empfangsring Platz haben (*R* Deskriptoren; `cads_net_poll()` holt bei
-  *R* ≤ 16 bis zu 16 ab). Grenze: *R*·MSS/*T*.
+- **Ring/Poll:** Pro Poll holt `cads_net_poll()` bis zu 16 Frames ab. Bis
+  zum Poll fasst der Empfangsring aber nur *R* Deskriptoren; während des
+  Abholens können in frei gewordene Deskriptoren neue Frames nachrücken.
+  Schätzt die Grenze deshalb mit *R*·MSS/*T* nach unten und mit
+  16·MSS/*T* nach oben ab und prüft in E, wo eure Messung liegt.
 - **Leitung:** aus 2.
 - **CPU:** Jeder Frame wird aus dem DMA-Puffer in einen pbuf kopiert, die
   Prüfsumme in Software gerechnet, TCP verarbeitet und ein ACK gebaut. Nehmt
@@ -328,7 +330,9 @@ Leserate bleibt das Fenster für immer zu.
 7. Versuch D: Zeichnet den Ablauf als Sequenzdiagramm (Zeitstempel aus
    Wireshark): letztes Datensegment, Nullfenster, Zero-Window-Probe(s),
    Window Update. In welchem Abstand kommen die Probes, und was macht der
-   Rechner mit einem kleinen, aber nicht leeren Restfenster?
+   Rechner mit einem kleinen, aber nicht leeren Restfenster? (Springt das
+   Fenster in D direkt auf 0, sucht das Restfenster in den ACKs aus C:
+   Wireshark-Filter `tcp.window_size > 0 and tcp.window_size < 536`.)
 
 --8<-- "issue-feedback.md"
 

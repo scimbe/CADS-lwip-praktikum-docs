@@ -102,7 +102,11 @@ Nach dem Versuch könnt ihr …
 **Die Trace.** Eine Zeile je ACK (`A` neu, `D` doppelt) mit dem Zustand
 **nach** dessen Verarbeitung durch lwIP, dazu Zeilen für verworfene Segmente
 (`X`, Spalte `acked` = Position des Segments), Fast Retransmits (`F`) und
-Timeouts (`R`). Spalten:
+Timeouts (`R`). Achtung: Geht eine schnelle Wiederholung selbst verloren,
+bleibt lwIP im Zustand Fast Recovery, und der folgende Retransmission Timeout
+erscheint in Trace und `status` als weiteres `F`, nicht als `R`. Erkennbar
+ist er an `cwnd` = 1 MSS danach und an einer Pause von rund einer Sekunde im
+Mitschnitt. Spalten:
 
 | Spalte | Bedeutung |
 |---|---|
@@ -126,7 +130,9 @@ Timeouts (`R`). Spalten:
     python3 tools/l09_plot.py --csv n20.csv          # vorhandene CSV nur zeichnen
     ```
 
-    Windows: `py tools\l09_plot.py …`. Das Bild entsteht nur mit `matplotlib`
+    Windows: `py tools\l09_plot.py …`. Das Skript holt die Trace über dieselbe
+    Telnet-Verbindung wie `rnlab.py lab`; unter macOS braucht es deshalb die
+    Freigabe *Lokales Netzwerk*. Das Bild entsteht nur mit `matplotlib`
     (`python3 -m pip install matplotlib`). Ohne öffnet ihr die CSV in einer
     Tabellenkalkulation (LibreOffice, Excel, Numbers) und zeichnet die Spalten
     als Linien über `t_ms`.
@@ -153,6 +159,11 @@ Timeouts (`R`). Spalten:
     ```
 
     Windows: `py tools\rnlab.py …` statt `python3 tools/rnlab.py …`.
+
+    Der Rechner bestätigt das letzte, kleine Segment eines Laufs oft
+    verzögert (Delayed ACK). Bei kurzen Läufen macht das einen spürbaren Teil
+    der Laufzeit aus; vergleicht deshalb auch die Zeit bis zum letzten
+    Datensegment in der Trace bzw. im Mitschnitt.
 
     Unter Windows (PowerShell) startet ihr `tcp-recv` in einem zweiten
     Terminal. Läuft die Verbindung nicht an, blockiert die Firewall Port 7009.
@@ -262,7 +273,8 @@ Ohne Implementierung bleibt `model_cwnd` konstant, die Phase ist `?`,
     Recovery und wiederholt sofort das nächste fehlende Segment. Erweitert
     euer Modell um diese Regel (ihr braucht den Stand `recover`). Wie viele der
     Timeouts aus Versuch C hätte NewReno vermieden? Zählt dazu in der Trace
-    die Fälle, in denen auf ein `F` kein zweites `F`, sondern ein `R` folgt.
+    die Fälle, in denen auf ein `F` kein zweites `F`, sondern ein Timeout
+    folgt – zu erkennen wie oben bei der Trace beschrieben, nicht nur an `R`.
 
 ## Auswertung
 
@@ -280,7 +292,8 @@ Ohne Implementierung bleibt `model_cwnd` konstant, die Phase ist `?`,
    RTT aus `status`) für alle Läufe in eine Tabelle ein. Für welche Läufe passt
    die Formel, für welche nicht – und warum?
 5. Versuch C mit *p* = 2 % und 5 %: Wie viele Timeouts meldet `status`?
-   Schätzt aus der Laufzeit im Vergleich zum Lauf mit *p* = 1 %, wie lange
+   Schätzt aus der Laufzeit im Vergleich zu eurem Lauf mit den wenigsten
+   Timeouts (prüft das, auch bei *p* = 1 % kann es welche geben), wie lange
    ein Timeout dauert und welcher Anteil der Laufzeit auf Timeouts entfällt.
    (Vertiefung: die Dauer direkt in der Trace des *p*-3-%-Laufs ablesen,
    Abstand vom letzten Ereignis zum `R`.)
