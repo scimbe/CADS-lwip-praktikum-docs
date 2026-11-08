@@ -88,11 +88,18 @@ in seinem eigenen Subnetz liegt, an seinen Router, das **Gateway**.
     ```
 
     `lab 03 netmask` ändert nur die Maske, Adresse und Gateway bleiben. Reißt
-    die Telnet-Verbindung ab, dann dieselben Befehle über die serielle Konsole
-    eingeben (ohne `python3 tools/rnlab.py lab …`, also z. B. `lab 03 stats`,
+    die Telnet-Verbindung ab oder kommt keine Antwort mehr, dann dieselben
+    Befehle über die serielle Konsole eingeben. Eine hängende Telnet-Verbindung
+    sieht nicht wie ein Abbruch aus: Bleibt die Bestätigung von
+    `lab 03 netmask` aus, gebt auch `lab 03 reset` und alle weiteren Befehle
+    dieser Maske seriell ein (ohne `python3 tools/rnlab.py lab …`, also z. B. `lab 03 stats`,
     siehe [serielle Konsole](../reference/serielle-konsole.md)).
     `lab 03 probe` zeigt die Zielklasse, den Next Hop, das ARP-Ergebnis für den
     Next Hop und ob ein Ping beantwortet wurde; jeder Schritt wartet höchstens 400 ms.
+    Eine noch offene ARP-Anfrage wiederholt das Board danach selbst einige
+    Sekunden lang – in Wireshark erscheinen die `who-has`-Zeilen deshalb
+    mehrfach. `lab 03 route <ip>` zeigt Zielklasse und Next Hop, ohne Verkehr
+    zu erzeugen.
 
 5. Bei jeder Maske in Wireshark festhalten: Welche ARP-Anfragen stellt das
    Board (`who-has … tell 192.168.33.99`)? Kommen Echo Requests an, gehen
@@ -100,8 +107,10 @@ in seinem eigenen Subnetz liegt, an seinen Router, das **Gateway**.
 6. Filter ausprobieren (über die **serielle Konsole**, weil ihr euch damit
    selbst aussperren könnt): `lab 03 filter 192.168.33.0/24`, dann
    `lab 03 filter 192.168.34.0/24`, jeweils vom Rechner pingen, `lab 03 stats`,
-   zum Schluss `lab 03 filter off`.
-7. Zum Schluss `lab 03 netmask /24` (oder Reset), damit die folgenden Versuche
+   zum Schluss `lab 03 filter off`. Die Tabelle von `lab 03 stats` zählt
+   jedes empfangene Paket, auch die verworfenen; `verworfen` zeigt, wie viele
+   davon der Filter lwIP vorenthalten hat.
+7. Zum Schluss `lab 03 netmask /24` (oder das Board neu starten), damit die folgenden Versuche
    wieder den Normalzustand vorfinden.
 
 ## Erwartungswert (vor der Messung notieren!)
@@ -190,9 +199,12 @@ Bauen und flashen wie in [Firmware-Labor-Image](../reference/firmware-lab-image.
    es mit einem Wireshark-Ausschnitt: das Paket, das ankommt, und was das
    Board daraufhin sendet. Wonach fragt es, und warum?
 3. `lab 03 stats` nach genau dieser Messung: In welcher Zeile/Spalte landen
-   eure Pings, und in welcher bei /24? Welche Pakete zählen als Broadcast oder
+   eure Pings, und in welcher bei /24? (Mitgezählt werden auch die
+   TCP-Segmente eurer `rnlab.py lab`-Aufrufe; rechnet sie heraus oder fragt
+   seriell ab.) Welche Pakete zählen als Broadcast oder
    Multicast, obwohl ihr sie nicht geschickt habt (z. B. mDNS `224.0.0.251`
-   eures Rechners)?
+   eures Rechners)? Bleiben diese Zeilen bei 0, ist auch das eine Antwort –
+   begründet sie mit eurem Mitschnitt.
 4. Filter: Warum ist der Filter „nur Quellen aus Präfix X“ kein Schutz gegen
    einen Angreifer im selben Ethernet? (Stichwort: Quelladresse fälschen.)
 
@@ -210,8 +222,10 @@ Bauen und flashen wie in [Firmware-Labor-Image](../reference/firmware-lab-image.
 - **`1u << 32`** ist undefiniert (auf ARM ergibt es oft 0, auf x86 oft 1).
   Die Host-Tests fangen das ab.
 - **ARP-Cache:** Nach einem Maskenwechsel können alte ARP-Einträge noch eine
-  Weile passen. Im Zweifel vor der Messung `arp -d` auf dem Rechner bzw.
-  Board-Reset.
+  Weile passen. Im Zweifel vor der Messung den Eintrag auf dem Rechner löschen
+  (macOS/Linux `sudo arp -d 192.168.33.99`, Windows als Administrator
+  `arp -d 192.168.33.99`) bzw. das Board neu starten (`lab 03 reset` löscht
+  nur die Zähler).
 - **Broadcast-Pings** beantwortet je nach Betriebssystem der **Rechner selbst**.
   Prüft in Wireshark, wer antwortet.
 

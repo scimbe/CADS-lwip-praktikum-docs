@@ -98,7 +98,7 @@ Nach dem Versuch könnt ihr …
     Windows: `py tools\rnlab.py …` statt `python3 tools/rnlab.py …`.
 
 4. **B – Bursts:** Je 20 Bursts der Länge *B* = 4, 8, 12, 16, 32 im
-   Abstand von 100 ms (`--rate` = 10·*B*); 24 und 64 als Vertiefung. Vor jedem Lauf `udp reset`.
+   Abstand von 100 ms (`-n` = 20·*B*, `--rate` = 10·*B*, `--burst` *B*); 24 und 64 als Vertiefung. Vor jedem Lauf `udp reset`.
 
     ```bash
     python3 tools/rnlab.py lab 192.168.33.99 "lab 07 udp reset"
@@ -128,6 +128,7 @@ Nach dem Versuch könnt ihr …
     ```bash
     python3 tools/rnlab.py lab 192.168.33.99 "lab 07 udp start echo 7070"
     python3 tools/rnlab.py udp-recv 7070 --expect 1000 &
+    sleep 1   # warten, bis udp-recv "Warte auf UDP …" meldet
     python3 tools/rnlab.py udp-send 192.168.33.99 7007 -n 1000 --rate 200; wait
     ```
 
@@ -241,9 +242,12 @@ Ohne Implementierung zählt die Senke jedes Datagramm als „fehlerhaft“.
 2. Die Zeile „erwartet“ des Boards endet bei der höchsten **empfangenen**
    Nummer. Vergleicht `verloren` mit dem MAC-Zähler und mit der Zahl der
    gesendeten Datagramme: Wie viele Verluste am Ende eines Laufs sieht die
-   Senke nicht, und wie löst `udp-recv --expect` dieses Problem?
-3. Welche Dauerrate hält das Board im Menü durch? Berechnet daraus *T* und
-   vergleicht mit Versuch 04.
+   Senke nicht, und wie löst `udp-recv --expect` dieses Problem? Prüft bei
+   auffälligen Läufen in Wireshark, ob wirklich alle Nummern das Kabel erreicht
+   haben – auch euer Rechner kann Datagramme verlieren.
+3. Welche Dauerrate hält das Board im Menü durch? Berechnet daraus *T* aus
+   einer Rate knapp über der Grenze und vergleicht mit Versuch 04. Vergleicht
+   auch mit eurer höchsten Rate: Passt sie noch zu eurem Modell?
 4. Versuch D: Wie viele Datagramme fehlen, wie viele davon hat irgendein Zähler
    des Boards gesehen? Welcher Anteil der Blit-Zeit war der Empfänger „taub“?
    Warum sieht auch Wireshark auf eurem Rechner nichts Auffälliges?
