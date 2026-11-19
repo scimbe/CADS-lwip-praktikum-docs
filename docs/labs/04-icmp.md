@@ -6,6 +6,13 @@
     Dieser Versuch läuft im Netz-Setup **S1 – statische Adresse**
     (siehe [Netz-Setup](../reference/netz-setup.md#s1-statische-adresse)).
 
+!!! warning "Erst implementieren, dann messen"
+    Ohne eure Implementierung beantwortet das Board bei `lab 04 echo on` keinen
+    Ping (100 % Verlust), Pings vom Board (`lab 04 ping`) erscheinen nur als `x`
+    (Prüfsumme 0), und `lab 04 stats` zeigt keine Messwerte.
+    Das ist kein Fehler des Boards: erst die Firmware-Aufgabe implementieren,
+    Host-Tests grün, dann flashen (Terminal meldet `Flash written and verified`).
+
 --8<-- "konventionen.md"
 
 `ping` ist das erste Werkzeug, zu dem man bei Netzproblemen greift. Dabei
@@ -61,12 +68,69 @@ Nach dem Versuch könnt ihr …
   auf allen Systemen dieselben Optionen, µs-Auflösung, TTL der Antworten,
   Median und Perzentile; `--hist 1` zeichnet ein Histogramm mit 1-ms-Klassen.
 
+## Experiment (Firmware-Aufgabe)
+
+Dateien in eurem Fork (Branch `praktikum/start`):
+
+- [`apps/rnlab/src/l04_icmp_logic.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l04_icmp_logic.c)
+  mit [`l04_icmp_logic.h`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l04_icmp_logic.h):
+  reine Logik, **hier arbeitet ihr** (`TODO(L04)`).
+- [`apps/rnlab/src/l04_icmp.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l04_icmp.c):
+  Responder, Ping, Befehle, fertig. Der Kopfkommentar erklärt das
+  Zusammenspiel mit lwIP.
+- [`tests/unit/test_rnlab_l04.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/tests/unit/test_rnlab_l04.c):
+  die Spezifikation (u. a. das Rechenbeispiel aus RFC 1071).
+
+| Funktion | Aufgabe |
+|---|---|
+| `uint16_t rnlab_inet_checksum(const uint8_t* data, size_t len)` | RFC 1071: 16-Bit-Wörter big-endian in 32 Bit aufsummieren, ungerades letztes Byte mit 0 auffüllen, Überträge zurückfalten, Komplement. Über ein korrektes Paket ergibt sie 0. |
+| `bool rnlab_l04_echo_to_reply(uint8_t* icmp, size_t len)` | Request prüfen (≥ 8 B, Typ 8, Code 0, Prüfsumme), in Reply umbauen (Typ 0, Prüfsumme neu), sonst `false` und Puffer unverändert |
+| `unsigned rnlab_l04_hist_bin(uint32_t rtt_us)` | Bin 0: < 250 µs, dann je Verdopplung ein Bin, Bin 9: ≥ 64 ms |
+| `void rnlab_l04_stats_add(stats, rtt_us)` | received, min, max, Σx, Σx², Histogramm |
+| `rnlab_l04_stats_avg_us()` / `rnlab_l04_stats_stddev_us()` | Mittelwert; Standardabweichung in Populationsform wie `ping`, nur Ganzzahlen: n²·Var = n·Σx² − (Σx)², Wurzel mit `rnlab_l04_isqrt64()` |
+
+**So übernimmt euer Responder.** `lab 04 echo on` legt mit
+`raw_new(IP_PROTO_ICMP)` einen RAW-PCB an. lwIPs `ip4_input()` reicht jedes
+Paket **zuerst** an `raw_input()` weiter, mit `p->payload` noch am IP-Header.
+Die recv-Funktion des PCB entscheidet:
+
+- Rückgabe **1** („gegessen“): Sie besitzt jetzt den Puffer und muss ihn
+  freigeben; lwIP bricht ab, `icmp_input()`, der eingebaute Responder, läuft
+  für dieses Paket nicht.
+- Rückgabe **0**: Paket unverändert lassen, lwIP antwortet wie gewohnt.
+
+Euer Responder antwortet mit TTL 64, lwIP mit TTL 255; so seht ihr schon in
+der `ping`-Ausgabe, wer antwortet. Pings an Broadcast-/Multicast-Adressen gibt
+er an lwIP zurück, das sie ignoriert. `lab 04 delay` darf nicht blockieren
+(der Callback läuft mitten in `cads_net_poll()`), deshalb wird die Antwort mit
+`sys_timeout()` in lwIPs Timerliste geparkt.
+
+```bash
+cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L04$' --output-on-failure
+```
+
+Ohne Implementierung verwirft `echo on` jede Anfrage als „fehlerhaft“, mit
+`echo off` antwortet weiter lwIP.
+
+!!! warning "Jeder RAW-PCB sieht jedes ICMP-Paket"
+    Die Firmware hat drei RAW-PCBs; `cads_net_ping()` holt sich einen eigenen,
+    auch wenn euer Responder läuft. Beide recv-Funktionen sehen dann dieselben
+    Pakete, die zuerst gefragte kann ein fremdes Paket „essen“. Deshalb gibt
+    die Funktion alles, was nicht eindeutig ihr gehört (Typ, Identifier,
+    Sequenznummer), mit 0 zurück.
+
+??? example "Vertiefung (optional): Prüfsumme inkrementell"
+    Beim Umbau Request → Reply ändert sich nur das erste 16-Bit-Wort
+    (`0x0800` → `0x0000`). Nach RFC 1624 kann man die neue Prüfsumme aus der
+    alten berechnen, ohne das ganze Paket zu lesen. Wie? Der Test
+    `test_echo_to_reply` prüft das Ergebnis.
+
 ## Versuchsablauf
 
 Pflicht sind die Schritte 1–7 (rund 3 Stunden einschließlich der
 Firmware-Aufgabe); die Vertiefungen danach sind für alle, die schneller sind.
 
-1. Firmware-Aufgabe umsetzen, Host-Tests grün, flashen.
+1. Firmware-Aufgabe umsetzen, Host-Tests grün, flashen (siehe oben).
 2. **Erwartungswerte** notieren (nächster Abschnitt).
 3. **A – lwIP antwortet** (Board im Menü):
 
@@ -185,63 +249,6 @@ und für `lab 04 ping` vom Board aus. Diese Messschleife ruft `cads_net_poll()`
 die ebenfalls nur bei jedem Poll geprüft wird. Welche RTT erwartet ihr
 (min/avg/max)? Bei `loss 30` und 100 Pings: wie viele Verluste im Mittel,
 und mit welcher Streuung (Binomialverteilung)?
-
-## Experiment (Firmware-Aufgabe)
-
-Dateien in eurem Fork (Branch `praktikum/start`):
-
-- [`apps/rnlab/src/l04_icmp_logic.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l04_icmp_logic.c)
-  mit [`l04_icmp_logic.h`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l04_icmp_logic.h):
-  reine Logik, **hier arbeitet ihr** (`TODO(L04)`).
-- [`apps/rnlab/src/l04_icmp.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l04_icmp.c):
-  Responder, Ping, Befehle, fertig. Der Kopfkommentar erklärt das
-  Zusammenspiel mit lwIP.
-- [`tests/unit/test_rnlab_l04.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/tests/unit/test_rnlab_l04.c):
-  die Spezifikation (u. a. das Rechenbeispiel aus RFC 1071).
-
-| Funktion | Aufgabe |
-|---|---|
-| `uint16_t rnlab_inet_checksum(const uint8_t* data, size_t len)` | RFC 1071: 16-Bit-Wörter big-endian in 32 Bit aufsummieren, ungerades letztes Byte mit 0 auffüllen, Überträge zurückfalten, Komplement. Über ein korrektes Paket ergibt sie 0. |
-| `bool rnlab_l04_echo_to_reply(uint8_t* icmp, size_t len)` | Request prüfen (≥ 8 B, Typ 8, Code 0, Prüfsumme), in Reply umbauen (Typ 0, Prüfsumme neu), sonst `false` und Puffer unverändert |
-| `unsigned rnlab_l04_hist_bin(uint32_t rtt_us)` | Bin 0: < 250 µs, dann je Verdopplung ein Bin, Bin 9: ≥ 64 ms |
-| `void rnlab_l04_stats_add(stats, rtt_us)` | received, min, max, Σx, Σx², Histogramm |
-| `rnlab_l04_stats_avg_us()` / `rnlab_l04_stats_stddev_us()` | Mittelwert; Standardabweichung in Populationsform wie `ping`, nur Ganzzahlen: n²·Var = n·Σx² − (Σx)², Wurzel mit `rnlab_l04_isqrt64()` |
-
-**So übernimmt euer Responder.** `lab 04 echo on` legt mit
-`raw_new(IP_PROTO_ICMP)` einen RAW-PCB an. lwIPs `ip4_input()` reicht jedes
-Paket **zuerst** an `raw_input()` weiter, mit `p->payload` noch am IP-Header.
-Die recv-Funktion des PCB entscheidet:
-
-- Rückgabe **1** („gegessen“): Sie besitzt jetzt den Puffer und muss ihn
-  freigeben; lwIP bricht ab, `icmp_input()`, der eingebaute Responder, läuft
-  für dieses Paket nicht.
-- Rückgabe **0**: Paket unverändert lassen, lwIP antwortet wie gewohnt.
-
-Euer Responder antwortet mit TTL 64, lwIP mit TTL 255; so seht ihr schon in
-der `ping`-Ausgabe, wer antwortet. Pings an Broadcast-/Multicast-Adressen gibt
-er an lwIP zurück, das sie ignoriert. `lab 04 delay` darf nicht blockieren
-(der Callback läuft mitten in `cads_net_poll()`), deshalb wird die Antwort mit
-`sys_timeout()` in lwIPs Timerliste geparkt.
-
-```bash
-cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L04$' --output-on-failure
-```
-
-Ohne Implementierung verwirft `echo on` jede Anfrage als „fehlerhaft“, mit
-`echo off` antwortet weiter lwIP.
-
-!!! warning "Jeder RAW-PCB sieht jedes ICMP-Paket"
-    Die Firmware hat drei RAW-PCBs; `cads_net_ping()` holt sich einen eigenen,
-    auch wenn euer Responder läuft. Beide recv-Funktionen sehen dann dieselben
-    Pakete, die zuerst gefragte kann ein fremdes Paket „essen“. Deshalb gibt
-    die Funktion alles, was nicht eindeutig ihr gehört (Typ, Identifier,
-    Sequenznummer), mit 0 zurück.
-
-??? example "Vertiefung (optional): Prüfsumme inkrementell"
-    Beim Umbau Request → Reply ändert sich nur das erste 16-Bit-Wort
-    (`0x0800` → `0x0000`). Nach RFC 1624 kann man die neue Prüfsumme aus der
-    alten berechnen, ohne das ganze Paket zu lesen. Wie? Der Test
-    `test_echo_to_reply` prüft das Ergebnis.
 
 ## Auswertung
 

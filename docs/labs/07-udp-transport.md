@@ -6,6 +6,12 @@
     Dieser Versuch läuft im Netz-Setup **S1 – statische Adresse**
     (siehe [Netz-Setup](../reference/netz-setup.md#s1-statische-adresse)).
 
+!!! warning "Erst implementieren, dann messen"
+    Ohne eure Implementierung zählt die Senke jedes Datagramm als
+    „fehlerhaft“; empfangen, verloren und umsortiert bleiben 0.
+    Das ist kein Fehler des Boards: erst die Firmware-Aufgabe implementieren,
+    Host-Tests grün, dann flashen (Terminal meldet `Flash written and verified`).
+
 --8<-- "konventionen.md"
 
 UDP verspricht nichts: keine Reihenfolge, keine Vollständigkeit, keine
@@ -70,6 +76,64 @@ Nach dem Versuch könnt ihr …
 | `lab 07 blit [ms]` | Display-Last: zeichnet für `ms` Millisekunden immer wieder ein kleines Rechteck oben rechts und pollt dazwischen das Netz (ein Punkt alle 300 ms als Lebenszeichen) |
 | `lab info` | u. a. `rx_ring_overruns`: Frames, für die der Controller seit dem Boot keinen freien Deskriptor hatte |
 
+## Experiment (Firmware-Aufgabe)
+
+Dateien in eurem Fork (Branch `praktikum/start`):
+
+- [`apps/rnlab/src/l07_udp_transport_logic.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l07_udp_transport_logic.c)
+  mit [`l07_udp_transport_logic.h`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l07_udp_transport_logic.h):
+  reine Logik, **hier arbeitet ihr** (`TODO(L07)`). Der Header beschreibt das
+  Datagrammformat und die genaue Semantik jedes Zählers.
+- [`apps/rnlab/src/l07_udp_transport.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l07_udp_transport.c):
+  Senke, Echo, Display-Last und Befehle, fertig.
+- [`tests/unit/test_rnlab_l07.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/tests/unit/test_rnlab_l07.c):
+  die Spezifikation (20 Tests, u. a. Überlauf bei 0xFFFFFFFF).
+
+| Funktion | Aufgabe |
+|---|---|
+| `bool rnlab_l07_parse_header(const uint8_t* data, size_t len, uint32_t* seq, uint64_t* sent_us)` | Sequenznummer (Byte 0–3) und Zeitstempel (Byte 4–11) big-endian dekodieren; `false` bei weniger als 12 Byte |
+| `rnlab_seq_event_t rnlab_seq_update(rnlab_seq_tracker_t* t, uint32_t seq)` | eine Sequenznummer verbuchen und einordnen: `FIRST`, `IN_ORDER`, `GAP`, `LATE`, `DUPLICATE`, `STALE` |
+
+**Das Empfangsfenster.** Der Tracker merkt sich die höchste Nummer (`next` − 1)
+und in einem 32-Bit-Wort `window`, welche der 32 Nummern darunter schon da
+waren (Bit *i* ↔ Nummer `next − 1 − i`). Eine neue, höhere Nummer schiebt das
+Fenster; die übersprungenen zählen erst einmal als **verloren**. Kommt eine
+davon später doch noch (Bit nicht gesetzt), war sie nur **umsortiert**:
+`lost` sinkt wieder. Ist das Bit schon gesetzt, ist es ein **Duplikat**. Was
+älter als 32 ist, lässt sich nicht mehr zuordnen und zählt als **veraltet**.
+
+**Serienarithmetik.** `seq < next` ist falsch, sobald der Zähler überläuft:
+0x00000001 ist *neuer* als 0xFFFFFFFF. Vergleicht über die vorzeichenbehaftete
+Differenz `(int32_t)(seq - next)` – so macht es auch TCP mit seinen
+Sequenznummern (RFC 1982, RFC 9293).
+
+```bash
+cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L07$' --output-on-failure
+```
+
+Ohne Implementierung zählt die Senke jedes Datagramm als „fehlerhaft“.
+
+??? example "Vertiefung (optional): Kürzer pollen"
+    `lab poll 2` bzw. `lab poll 1` lässt das Board im Menü alle 2 bzw. 1 ms
+    pollen (Standard 10). Sagt für 5000 Datagramme/s die Verlustrate voraus
+    und messt nach. Was kostet ein kürzeres Poll-Intervall die Oberfläche?
+
+??? example "Vertiefung (optional): Ein tieferer Ring"
+    Die Tiefe des Empfangsrings ist eine Build-Option:
+    `-DCADS_RNLAB_ETH_RX_COUNT=16` (4 … 32, je Deskriptor 1536 B SRAM, siehe
+    [`apps/rnlab/README.md`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/README.md),
+    Abschnitt „TCP-Parameter“). Sagt voraus, wie sich Burst-Schwelle und
+    Dauerrate aus B und C ändern, und messt nach. Warum ist ein tieferer Ring
+    keine Lösung für Versuch D?
+
+??? example "Vertiefung (optional): Jitter auf dem Board"
+    `udp-recv` berechnet den Jitter nach RFC 3550 (6.4.1) aus
+    Laufzeitdifferenzen. Das Board hat den Sendezeitstempel ebenfalls. Wie
+    groß erwartet ihr den Jitter am Board im Menü, wenn Datagramme nur alle
+    *T* abgeholt werden? Erweitert `l07_recv()` um die Rechnung (Zeitstempel
+    in ganzen µs, `cads_hal_ticks_us()` als Empfangszeit – nur Differenzen
+    zählen, die Uhren müssen nicht synchron sein).
+
 ## Versuchsablauf
 
 !!! info "Zeitplan: rund 3 Stunden Pflicht"
@@ -78,7 +142,7 @@ Nach dem Versuch könnt ihr …
     5–6 und die aufklappbaren Vertiefungs-Kästen (`lab poll`, tieferer Ring,
     Jitter).
 
-1. Firmware-Aufgabe umsetzen, Host-Tests grün, flashen.
+1. Firmware-Aufgabe umsetzen, Host-Tests grün, flashen (siehe oben).
 2. **Erwartungswerte** notieren (nächster Abschnitt).
 
     !!! warning "Vor jeder Messreihe: `lab 07 udp reset`"
@@ -175,64 +239,6 @@ Ethernet-Empfang (RMII CRS_DV) einen Pin, **PA7**. Lest den Kopfkommentar von
 Was passiert mit dem Ethernet-Empfang, solange ein Rechteck auf das Display
 übertragen wird? Welche der drei Zähler (verloren, Treiber, MAC) steigen dabei,
 welche nicht?
-
-## Experiment (Firmware-Aufgabe)
-
-Dateien in eurem Fork (Branch `praktikum/start`):
-
-- [`apps/rnlab/src/l07_udp_transport_logic.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l07_udp_transport_logic.c)
-  mit [`l07_udp_transport_logic.h`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l07_udp_transport_logic.h):
-  reine Logik, **hier arbeitet ihr** (`TODO(L07)`). Der Header beschreibt das
-  Datagrammformat und die genaue Semantik jedes Zählers.
-- [`apps/rnlab/src/l07_udp_transport.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l07_udp_transport.c):
-  Senke, Echo, Display-Last und Befehle, fertig.
-- [`tests/unit/test_rnlab_l07.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/tests/unit/test_rnlab_l07.c):
-  die Spezifikation (20 Tests, u. a. Überlauf bei 0xFFFFFFFF).
-
-| Funktion | Aufgabe |
-|---|---|
-| `bool rnlab_l07_parse_header(const uint8_t* data, size_t len, uint32_t* seq, uint64_t* sent_us)` | Sequenznummer (Byte 0–3) und Zeitstempel (Byte 4–11) big-endian dekodieren; `false` bei weniger als 12 Byte |
-| `rnlab_seq_event_t rnlab_seq_update(rnlab_seq_tracker_t* t, uint32_t seq)` | eine Sequenznummer verbuchen und einordnen: `FIRST`, `IN_ORDER`, `GAP`, `LATE`, `DUPLICATE`, `STALE` |
-
-**Das Empfangsfenster.** Der Tracker merkt sich die höchste Nummer (`next` − 1)
-und in einem 32-Bit-Wort `window`, welche der 32 Nummern darunter schon da
-waren (Bit *i* ↔ Nummer `next − 1 − i`). Eine neue, höhere Nummer schiebt das
-Fenster; die übersprungenen zählen erst einmal als **verloren**. Kommt eine
-davon später doch noch (Bit nicht gesetzt), war sie nur **umsortiert**:
-`lost` sinkt wieder. Ist das Bit schon gesetzt, ist es ein **Duplikat**. Was
-älter als 32 ist, lässt sich nicht mehr zuordnen und zählt als **veraltet**.
-
-**Serienarithmetik.** `seq < next` ist falsch, sobald der Zähler überläuft:
-0x00000001 ist *neuer* als 0xFFFFFFFF. Vergleicht über die vorzeichenbehaftete
-Differenz `(int32_t)(seq - next)` – so macht es auch TCP mit seinen
-Sequenznummern (RFC 1982, RFC 9293).
-
-```bash
-cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L07$' --output-on-failure
-```
-
-Ohne Implementierung zählt die Senke jedes Datagramm als „fehlerhaft“.
-
-??? example "Vertiefung (optional): Kürzer pollen"
-    `lab poll 2` bzw. `lab poll 1` lässt das Board im Menü alle 2 bzw. 1 ms
-    pollen (Standard 10). Sagt für 5000 Datagramme/s die Verlustrate voraus
-    und messt nach. Was kostet ein kürzeres Poll-Intervall die Oberfläche?
-
-??? example "Vertiefung (optional): Ein tieferer Ring"
-    Die Tiefe des Empfangsrings ist eine Build-Option:
-    `-DCADS_RNLAB_ETH_RX_COUNT=16` (4 … 32, je Deskriptor 1536 B SRAM, siehe
-    [`apps/rnlab/README.md`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/README.md),
-    Abschnitt „TCP-Parameter“). Sagt voraus, wie sich Burst-Schwelle und
-    Dauerrate aus B und C ändern, und messt nach. Warum ist ein tieferer Ring
-    keine Lösung für Versuch D?
-
-??? example "Vertiefung (optional): Jitter auf dem Board"
-    `udp-recv` berechnet den Jitter nach RFC 3550 (6.4.1) aus
-    Laufzeitdifferenzen. Das Board hat den Sendezeitstempel ebenfalls. Wie
-    groß erwartet ihr den Jitter am Board im Menü, wenn Datagramme nur alle
-    *T* abgeholt werden? Erweitert `l07_recv()` um die Rechnung (Zeitstempel
-    in ganzen µs, `cads_hal_ticks_us()` als Empfangszeit – nur Differenzen
-    zählen, die Uhren müssen nicht synchron sein).
 
 ## Auswertung
 

@@ -8,6 +8,13 @@
     Für die Entwicklung und die Blit-Messung reicht **S1** mit dem lokalen
     Wetter-Testserver aus Versuch 10.
 
+!!! warning "Erst implementieren, dann messen"
+    Ohne eure Implementierung ruft die App nichts ab und zeigt „TODO(L11)“;
+    ohne den Pflichtteil von Versuch 10 kommen keine Daten (siehe
+    „Voraussetzung: Versuch 10 fertig“ im nächsten Abschnitt).
+    Das ist kein Fehler des Boards: erst die Firmware-Aufgabe implementieren,
+    Host-Tests grün, dann flashen (Terminal meldet `Flash written and verified`).
+
 --8<-- "konventionen.md"
 
 Aus dem Befehl `lab 10 get` wird ein Gerät: Die Wetterstation zeigt die
@@ -86,9 +93,101 @@ Nach dem Versuch könnt ihr …
     Anzeige per Netz auf den Testserver und lest die Messung der App ab, ohne
     das Display anzufassen.
 
+## Experiment (Firmware-Aufgabe)
+
+!!! warning "Voraussetzung: Versuch 10 fertig"
+    Die App holt ihre Daten mit dem HTTP-Client aus Versuch 10
+    (`rnlab_l10_fetch_start()`). Ist dort noch ein `TODO(L10)` offen, ruft die
+    App nichts ab und zeigt „Argument ungueltig“ bzw. „noch nicht
+    implementiert (TODO L10)“. Die App braucht nur den **Pflichtteil** von
+    Versuch 10 (HTTP/1.0, `ctest -L '^rnlab-L10$'`), nicht die Vertiefung.
+    Genauer:
+
+    - Die **Host-Tests von Versuch 11** (`ctest -L '^rnlab-L11$'`) laufen
+      ohne Versuch 10 – ihr könnt Steuerung und Anzeige also zuerst fertig
+      machen.
+    - Am **Board mit dem Testserver** (IP-Adresse als Quelle, `lab 11 server
+      <rechner>:8080`) braucht ihr aus Versuch 10 alles außer den beiden
+      DNS-Stellen (`dns_gethostbyname` und `l10_dns_found`).
+    - Nur **open-meteo über S2** (Messung E) braucht auch DNS.
+
+    Falls euer HTTP-Client aus Versuch 10 nicht funktioniert: Die Betreuung
+    stellt zu Beginn von Termin 12 einen Referenzstand bereit, den ihr in
+    euren Fork mergen könnt:
+
+    ```bash
+    git fetch upstream freigabe/l10-basis
+    git merge upstream/freigabe/l10-basis
+    # Konflikt in euren L10-Dateien? Dann den Referenzstand nehmen:
+    git checkout --theirs apps/rnlab/src/l10_http_wetter_1.c apps/rnlab/src/l10_http_wetter_1_logic.c
+    git add apps/rnlab/src/l10_http_wetter_1*.c && git commit --no-edit
+    ```
+
+    (`upstream` ist das Ausgangs-Repository eures Forks.) Danach sind die
+    L10-Pflichttests grün und `lab 10 get` funktioniert; eure übrigen Dateien
+    bleiben unverändert.
+
+Dateien in eurem Fork (Branch `praktikum/start`):
+
+- [`apps/rnlab/src/l11_wetter_app_logic.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l11_wetter_app_logic.c)
+  mit [`l11_wetter_app_logic.h`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l11_wetter_app_logic.h):
+  die Steuerung, reine Logik (`TODO(L11)`). Die WMO-Tabelle (Code → Text,
+  Icon-Gruppe) ist schon fertig.
+- [`apps/wetter/cads_wetter.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/wetter/cads_wetter.c):
+  die App. Im Gerüst ist sie im Menü eingetragen, das Layout steht als
+  Tabelle `wx_field_rects` darin (die Tests prüfen genau diese Rechtecke),
+  und sie öffnet sich mit den Feldrahmen als Platzhalter; Anzeige und Tick
+  schreibt ihr (`TODO(L11)`). Hintergrund zum
+  Aufbau einer App: [`apps/wetter/README.md`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/wetter/README.md),
+  `apps/netinfo` als einfaches Vorbild.
+- Zu benutzen: euer HTTP-Client aus Versuch 10 über
+  [`cads_wetter_net.h`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/wetter/cads_wetter_net.h),
+  `lab 11` in [`l11_wetter_app.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l11_wetter_app.c).
+- Tests: [`tests/unit/test_rnlab_l11.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/tests/unit/test_rnlab_l11.c)
+  (Steuerung, 20 Tests) und [`tests/unit/test_wetter_app.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/tests/unit/test_wetter_app.c)
+  (die App durch den echten Compositor auf einer Test-HAL, die jeden Blit
+  mitschreibt).
+
+| Funktion (Logik) | Aufgabe |
+|---|---|
+| `bool rnlab_wx_should_fetch(wx, now, link_up, has_ip)` | Ist jetzt ein Abruf fällig? Nie ohne Link/Adresse oder während einer läuft; nach Wiederkehr des Netzes sofort; Uhrüberlauf nach 49 Tagen beachten |
+| `void rnlab_wx_fetch_done(wx, now, result)` | Erfolg: Werte übernehmen, nächster Abruf nach dem Intervall. Fehler: alte Werte **behalten**, Backoff 5 s → ×2 → max. 5 min |
+| `void rnlab_wx_view(wx, now, out)` | alle Texte der Anzeige inkl. Statuszeile und Farbstufe; die Statuszeile ändert sich bei vorhandenen Daten höchstens einmal pro Minute |
+| `uint8_t rnlab_wx_view_diff(before, after)` | welche Felder sich geändert haben |
+
+In der App (`cads_wetter.c`):
+
+| Stelle | Aufgabe |
+|---|---|
+| `cads_wetter_tick()` | Netzstatus → Steuerung → ggf. Abruf starten/auswerten; View-Modell berechnen, **pro Frame höchstens ein** geändertes Feld per `cads_view_dirty_rect()` melden, sonst nichts |
+| `cads_wetter_draw()` | jedes Feld in seinem Rechteck vollständig zeichnen (erst Hintergrund, dann Text); Icons aus Linien/Rechtecken |
+| `cads_wetter_exit()` | laufenden Abruf abbrechen |
+
+**Warum ein Feld pro Frame?** Eine View hat genau **ein** Schadensrechteck:
+Mehrere `cads_view_dirty_rect()` im selben Frame werden zu dem kleinsten
+Rechteck zusammengefasst, das alle enthält – mit allem Unveränderten
+dazwischen. Das ist Fall (b) im Erwartungswert. `test_wetter_app` prüft,
+dass jeder Blit im Rechteck des geänderten Feldes liegt, dass ein neuer
+eingespielter Datensatz, bei dem sich alle fünf Felder ändern, fünf kleine
+Frames ergibt und dass im Leerlauf gar nichts
+übertragen wird.
+
+```bash
+cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L11$' --output-on-failure
+WETTER_PPM_DIR=/tmp ./build/host/tests/unit/test_wetter_app   # Bildschirmfotos als PPM
+```
+
+![Wetter-App im Simulator (Test-HAL): Werte da, aber kein Link](../assets/screenshots/wetter-app/wetter_daten.png)
+
+??? example "Vertiefung (optional): ein Streifen pro Frame"
+    Auch ein einzelnes Feld kann mehrere 16-Zeilen-Streifen belegen, die direkt
+    nacheinander übertragen werden. Wie müsstet ihr die Felder legen, damit
+    jedes in genau einem Streifen liegt? Was bringt das für die längste
+    Empfangspause, was für die Gesamtzeit?
+
 ## Versuchsablauf
 
-1. Firmware-Aufgabe umsetzen, Host-Tests grün (`ctest -L '^rnlab-L11$'`), flashen.
+1. Firmware-Aufgabe umsetzen, Host-Tests grün (`ctest -L '^rnlab-L11$'`), flashen (siehe oben).
 2. **Erwartungswerte** notieren (nächster Abschnitt).
 3. **A – Funktion mit Testserver:**
 
@@ -189,98 +288,6 @@ Segmente in eine Pause fallen?
 **4. Abnahme.** Welche Abweichung zwischen App und `curl` erwartet ihr, wenn
 beide innerhalb derselben Viertelstunde abrufen – und welche Anzeige-
 genauigkeit hat die App (Nachkommastellen)?
-
-## Experiment (Firmware-Aufgabe)
-
-!!! warning "Voraussetzung: Versuch 10 fertig"
-    Die App holt ihre Daten mit dem HTTP-Client aus Versuch 10
-    (`rnlab_l10_fetch_start()`). Ist dort noch ein `TODO(L10)` offen, ruft die
-    App nichts ab und zeigt „Argument ungueltig“ bzw. „noch nicht
-    implementiert (TODO L10)“. Die App braucht nur den **Pflichtteil** von
-    Versuch 10 (HTTP/1.0, `ctest -L '^rnlab-L10$'`), nicht die Vertiefung.
-    Genauer:
-
-    - Die **Host-Tests von Versuch 11** (`ctest -L '^rnlab-L11$'`) laufen
-      ohne Versuch 10 – ihr könnt Steuerung und Anzeige also zuerst fertig
-      machen.
-    - Am **Board mit dem Testserver** (IP-Adresse als Quelle, `lab 11 server
-      <rechner>:8080`) braucht ihr aus Versuch 10 alles außer den beiden
-      DNS-Stellen (`dns_gethostbyname` und `l10_dns_found`).
-    - Nur **open-meteo über S2** (Messung E) braucht auch DNS.
-
-    Falls euer HTTP-Client aus Versuch 10 nicht funktioniert: Die Betreuung
-    stellt zu Beginn von Termin 12 einen Referenzstand bereit, den ihr in
-    euren Fork mergen könnt:
-
-    ```bash
-    git fetch upstream freigabe/l10-basis
-    git merge upstream/freigabe/l10-basis
-    # Konflikt in euren L10-Dateien? Dann den Referenzstand nehmen:
-    git checkout --theirs apps/rnlab/src/l10_http_wetter_1.c apps/rnlab/src/l10_http_wetter_1_logic.c
-    git add apps/rnlab/src/l10_http_wetter_1*.c && git commit --no-edit
-    ```
-
-    (`upstream` ist das Ausgangs-Repository eures Forks.) Danach sind die
-    L10-Pflichttests grün und `lab 10 get` funktioniert; eure übrigen Dateien
-    bleiben unverändert.
-
-Dateien in eurem Fork (Branch `praktikum/start`):
-
-- [`apps/rnlab/src/l11_wetter_app_logic.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l11_wetter_app_logic.c)
-  mit [`l11_wetter_app_logic.h`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l11_wetter_app_logic.h):
-  die Steuerung, reine Logik (`TODO(L11)`). Die WMO-Tabelle (Code → Text,
-  Icon-Gruppe) ist schon fertig.
-- [`apps/wetter/cads_wetter.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/wetter/cads_wetter.c):
-  die App. Im Gerüst ist sie im Menü eingetragen, das Layout steht als
-  Tabelle `wx_field_rects` darin (die Tests prüfen genau diese Rechtecke),
-  und sie öffnet sich mit den Feldrahmen als Platzhalter; Anzeige und Tick
-  schreibt ihr (`TODO(L11)`). Hintergrund zum
-  Aufbau einer App: [`apps/wetter/README.md`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/wetter/README.md),
-  `apps/netinfo` als einfaches Vorbild.
-- Zu benutzen: euer HTTP-Client aus Versuch 10 über
-  [`cads_wetter_net.h`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/wetter/cads_wetter_net.h),
-  `lab 11` in [`l11_wetter_app.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l11_wetter_app.c).
-- Tests: [`tests/unit/test_rnlab_l11.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/tests/unit/test_rnlab_l11.c)
-  (Steuerung, 20 Tests) und [`tests/unit/test_wetter_app.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/tests/unit/test_wetter_app.c)
-  (die App durch den echten Compositor auf einer Test-HAL, die jeden Blit
-  mitschreibt).
-
-| Funktion (Logik) | Aufgabe |
-|---|---|
-| `bool rnlab_wx_should_fetch(wx, now, link_up, has_ip)` | Ist jetzt ein Abruf fällig? Nie ohne Link/Adresse oder während einer läuft; nach Wiederkehr des Netzes sofort; Uhrüberlauf nach 49 Tagen beachten |
-| `void rnlab_wx_fetch_done(wx, now, result)` | Erfolg: Werte übernehmen, nächster Abruf nach dem Intervall. Fehler: alte Werte **behalten**, Backoff 5 s → ×2 → max. 5 min |
-| `void rnlab_wx_view(wx, now, out)` | alle Texte der Anzeige inkl. Statuszeile und Farbstufe; die Statuszeile ändert sich bei vorhandenen Daten höchstens einmal pro Minute |
-| `uint8_t rnlab_wx_view_diff(before, after)` | welche Felder sich geändert haben |
-
-In der App (`cads_wetter.c`):
-
-| Stelle | Aufgabe |
-|---|---|
-| `cads_wetter_tick()` | Netzstatus → Steuerung → ggf. Abruf starten/auswerten; View-Modell berechnen, **pro Frame höchstens ein** geändertes Feld per `cads_view_dirty_rect()` melden, sonst nichts |
-| `cads_wetter_draw()` | jedes Feld in seinem Rechteck vollständig zeichnen (erst Hintergrund, dann Text); Icons aus Linien/Rechtecken |
-| `cads_wetter_exit()` | laufenden Abruf abbrechen |
-
-**Warum ein Feld pro Frame?** Eine View hat genau **ein** Schadensrechteck:
-Mehrere `cads_view_dirty_rect()` im selben Frame werden zu dem kleinsten
-Rechteck zusammengefasst, das alle enthält – mit allem Unveränderten
-dazwischen. Das ist Fall (b) im Erwartungswert. `test_wetter_app` prüft,
-dass jeder Blit im Rechteck des geänderten Feldes liegt, dass ein neuer
-eingespielter Datensatz, bei dem sich alle fünf Felder ändern, fünf kleine
-Frames ergibt und dass im Leerlauf gar nichts
-übertragen wird.
-
-```bash
-cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L11$' --output-on-failure
-WETTER_PPM_DIR=/tmp ./build/host/tests/unit/test_wetter_app   # Bildschirmfotos als PPM
-```
-
-![Wetter-App im Simulator (Test-HAL): Werte da, aber kein Link](../assets/screenshots/wetter-app/wetter_daten.png)
-
-??? example "Vertiefung (optional): ein Streifen pro Frame"
-    Auch ein einzelnes Feld kann mehrere 16-Zeilen-Streifen belegen, die direkt
-    nacheinander übertragen werden. Wie müsstet ihr die Felder legen, damit
-    jedes in genau einem Streifen liegt? Was bringt das für die längste
-    Empfangspause, was für die Gesamtzeit?
 
 ## Auswertung
 

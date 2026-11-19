@@ -6,6 +6,13 @@
     Dieser Versuch läuft im Netz-Setup **S2 – Internetfreigabe**
     (siehe [Netz-Setup](../reference/netz-setup.md#s2-internetfreigabe)).
 
+!!! warning "Erst implementieren, dann messen"
+    Ohne eure Implementierung löst `lab 06 resolve` trotzdem auf (DNS läuft in
+    lwIP), aber `lab 06 last` und `lab 06 cache` zeigen nur „Parser: TODO(L06)
+    offen“, ohne Antworten und TTL.
+    Das ist kein Fehler des Boards: erst die Firmware-Aufgabe implementieren,
+    Host-Tests grün, dann flashen (Terminal meldet `Flash written and verified`).
+
 --8<-- "konventionen.md"
 
 Seit Versuch 05 hat das Board eine Adresse aus eurem Netz und einen
@@ -81,9 +88,64 @@ Nach dem Versuch könnt ihr …
     Quellport und DNS-ID wählt das Board für jede Anfrage zufällig: Eure Werte
     weichen von allen Beispielen auf dieser Seite ab.
 
+## Experiment (Firmware-Aufgabe)
+
+Dateien in eurem Fork (Branch `praktikum/start`, gleiche Pfade im eigenen Repository; die Links zeigen auf die Vorlage):
+
+- [`apps/rnlab/src/l06_dns_nat_logic.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l06_dns_nat_logic.c)
+  mit [`l06_dns_nat_logic.h`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l06_dns_nat_logic.h):
+  reine Logik, **hier arbeitet ihr** (`TODO(L06)`). Der Kopfkommentar der
+  `.h` zeigt den Aufbau einer DNS-Nachricht und der Namenskompression.
+- [`apps/rnlab/src/l06_dns_nat.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l06_dns_nat.c):
+  `resolve`, Hooks, Cache-Spiegel und Befehle, fertig.
+- [`tests/unit/test_rnlab_l06.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/tests/unit/test_rnlab_l06.c):
+  die Spezifikation mit echten Antworten eines öffentlichen Resolvers und
+  absichtlich kaputten Nachrichten.
+
+| Funktion | Aufgabe |
+|---|---|
+| `rnlab_dns_status_t rnlab_l06_read_name(msg, len, offset, out, out_size, next)` | Namen ab `offset` als Text mit Punkten nach `out` lesen (Wurzel → `""`). Labels 1–63 B, `0` = Ende, `11xxxxxx xxxxxxxx` = Zeiger, `01…`/`10…` = Fehler. `*next` zeigt hinter den **ersten** Zeiger bzw. hinter die `0`. Nie außerhalb `msg[0 … len-1]` lesen, nie über `out_size` schreiben (dann `ERR_NAME_LONG`, aber `*next` trotzdem hinter den Namen setzen), auf **jeder** Eingabe terminieren. |
+| `rnlab_dns_status_t rnlab_l06_parse(msg, len, out)` | Header (QR-Bit gesetzt, genau eine Frage), Frage (Name, Typ), alle `ancount` Antworten überlesen, höchstens 4 speichern (Typ, TTL, bei A/IN die Adresse, `rdlength` muss 4 sein). TTL mit gesetztem oberstem Bit gilt als 0 (RFC 2181 §8). |
+
+Fertig vorgegeben: `rnlab_l06_min_ttl()`, `rnlab_l06_find_dns()`,
+`rnlab_l06_status_name()`, `rnlab_l06_type_name()`.
+
+**So kommt die Antwort zu eurem Parser.** `lab 06 resolve` ruft
+`dns_gethostbyname()` auf; lwIP antwortet sofort aus seiner Tabelle
+(`ERR_OK`) oder schickt eine Anfrage und ruft später einen Rückruf. Während
+`resolve` wartet, pollt es selbst `cads_net_poll()`. Der Hook
+`rnlab_l06_hook_tx_frame()` notiert Zeit, Quellport und ID der Anfrage,
+`rnlab_l06_hook_rx_frame()` gibt jede Antwort (Quellport 53) an
+`rnlab_l06_parse()` und trägt sie in den Cache-Spiegel ein. lwIPs eigene
+Tabelle ist in `dns.c` versteckt (`static`) und nicht auslesbar.
+
+```bash
+cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L06$' --output-on-failure
+```
+
+!!! warning "Ein Paket, eine Endlosschleife"
+    Ein Zeiger `C0 0C` an Offset 12 zeigt auf sich selbst. Ein Parser, der
+    Zeigern einfach folgt, hängt damit für immer, und das Board mit ihm. Die
+    Regel „ein Zeiger muss vor den Anfang der gerade gelesenen Labelfolge
+    zeigen“ schließt Schleifen aus, ohne echte Antworten abzulehnen. Warum?
+
+??? example "Vertiefung (optional): Warum zufällige ID und zufälliger Quellport? (RFC 5452, Kaminsky)"
+    Eine gefälschte DNS-Antwort wird angenommen, wenn sie vor der echten
+    ankommt und ID **und** Zielport der Anfrage trifft. Lest RFC 5452
+    Abschn. 4–9 und rechnet: Wie viele Versuche braucht ein Angreifer im
+    Mittel mit zufälliger 16-Bit-ID allein, und wie viele mit zufälliger ID
+    und zufälligem Port (≈ 2¹⁶ · 2¹⁶)? Warum macht der Kaminsky-Angriff (2008)
+    mit Anfragen nach immer neuen Unternamen aus „einmal pro TTL raten“ ein
+    „beliebig oft raten“?
+
+    Dann messt: Board resetten, `lab 06 resolve` mit einem neuen Namen, Port
+    und ID notieren; das dreimal. lwIP wählt beide mit `LWIP_RAND()`. Sind sie
+    wirklich zufällig? Was macht eine NAT-Box, die Ports der Reihe nach vergibt,
+    aus dieser Schutzmaßnahme?
+
 ## Versuchsablauf
 
-1. Firmware-Aufgabe umsetzen, Host-Tests grün, flashen.
+1. Firmware-Aufgabe umsetzen, Host-Tests grün, flashen (siehe oben).
 2. **Erwartungswerte** notieren (nächster Abschnitt). Dazu vom Rechner aus
    messen: `python3 tools/rnlab.py ping 1.1.1.1 -c 10` sowie zweimal
    hintereinander `nslookup api.open-meteo.com 1.1.1.1` (auf allen drei
@@ -163,61 +225,6 @@ Wartezeiten lwIP wiederholt (der Timer tickt alle `DNS_TMR_INTERVAL` =
 Ziel-IP, Zielport, DNS-ID, IP-TTL, UDP-Prüfsumme) sind auf der
 Internet-Seite anders, wenn das Board **direkt** `1.1.1.1` fragt? Und welche,
 wenn es den **Rechner** fragt?
-
-## Experiment (Firmware-Aufgabe)
-
-Dateien in eurem Fork (Branch `praktikum/start`, gleiche Pfade im eigenen Repository; die Links zeigen auf die Vorlage):
-
-- [`apps/rnlab/src/l06_dns_nat_logic.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l06_dns_nat_logic.c)
-  mit [`l06_dns_nat_logic.h`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l06_dns_nat_logic.h):
-  reine Logik, **hier arbeitet ihr** (`TODO(L06)`). Der Kopfkommentar der
-  `.h` zeigt den Aufbau einer DNS-Nachricht und der Namenskompression.
-- [`apps/rnlab/src/l06_dns_nat.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l06_dns_nat.c):
-  `resolve`, Hooks, Cache-Spiegel und Befehle, fertig.
-- [`tests/unit/test_rnlab_l06.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/tests/unit/test_rnlab_l06.c):
-  die Spezifikation mit echten Antworten eines öffentlichen Resolvers und
-  absichtlich kaputten Nachrichten.
-
-| Funktion | Aufgabe |
-|---|---|
-| `rnlab_dns_status_t rnlab_l06_read_name(msg, len, offset, out, out_size, next)` | Namen ab `offset` als Text mit Punkten nach `out` lesen (Wurzel → `""`). Labels 1–63 B, `0` = Ende, `11xxxxxx xxxxxxxx` = Zeiger, `01…`/`10…` = Fehler. `*next` zeigt hinter den **ersten** Zeiger bzw. hinter die `0`. Nie außerhalb `msg[0 … len-1]` lesen, nie über `out_size` schreiben (dann `ERR_NAME_LONG`, aber `*next` trotzdem hinter den Namen setzen), auf **jeder** Eingabe terminieren. |
-| `rnlab_dns_status_t rnlab_l06_parse(msg, len, out)` | Header (QR-Bit gesetzt, genau eine Frage), Frage (Name, Typ), alle `ancount` Antworten überlesen, höchstens 4 speichern (Typ, TTL, bei A/IN die Adresse, `rdlength` muss 4 sein). TTL mit gesetztem oberstem Bit gilt als 0 (RFC 2181 §8). |
-
-Fertig vorgegeben: `rnlab_l06_min_ttl()`, `rnlab_l06_find_dns()`,
-`rnlab_l06_status_name()`, `rnlab_l06_type_name()`.
-
-**So kommt die Antwort zu eurem Parser.** `lab 06 resolve` ruft
-`dns_gethostbyname()` auf; lwIP antwortet sofort aus seiner Tabelle
-(`ERR_OK`) oder schickt eine Anfrage und ruft später einen Rückruf. Während
-`resolve` wartet, pollt es selbst `cads_net_poll()`. Der Hook
-`rnlab_l06_hook_tx_frame()` notiert Zeit, Quellport und ID der Anfrage,
-`rnlab_l06_hook_rx_frame()` gibt jede Antwort (Quellport 53) an
-`rnlab_l06_parse()` und trägt sie in den Cache-Spiegel ein. lwIPs eigene
-Tabelle ist in `dns.c` versteckt (`static`) und nicht auslesbar.
-
-```bash
-cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L06$' --output-on-failure
-```
-
-!!! warning "Ein Paket, eine Endlosschleife"
-    Ein Zeiger `C0 0C` an Offset 12 zeigt auf sich selbst. Ein Parser, der
-    Zeigern einfach folgt, hängt damit für immer, und das Board mit ihm. Die
-    Regel „ein Zeiger muss vor den Anfang der gerade gelesenen Labelfolge
-    zeigen“ schließt Schleifen aus, ohne echte Antworten abzulehnen. Warum?
-
-??? example "Vertiefung (optional): Warum zufällige ID und zufälliger Quellport? (RFC 5452, Kaminsky)"
-    Eine gefälschte DNS-Antwort wird angenommen, wenn sie vor der echten
-    ankommt und ID **und** Zielport der Anfrage trifft. Lest RFC 5452
-    Abschn. 4–9 und rechnet: Wie viele Versuche braucht ein Angreifer im
-    Mittel mit zufälliger 16-Bit-ID allein, und wie viele mit zufälliger ID
-    und zufälligem Port (≈ 2¹⁶ · 2¹⁶)? Warum macht der Kaminsky-Angriff (2008)
-    mit Anfragen nach immer neuen Unternamen aus „einmal pro TTL raten“ ein
-    „beliebig oft raten“?
-
-    Dann messt: Board resetten, `lab 06 resolve` mit einem neuen Namen, Port
-    und ID notieren; das dreimal. lwIP wählt beide mit `LWIP_RAND()`. Sind sie
-    wirklich zufällig? Was macht eine NAT-Box, die Ports der Reihe nach vergibt,
-    aus dieser Schutzmaßnahme?
 
 ## Auswertung
 

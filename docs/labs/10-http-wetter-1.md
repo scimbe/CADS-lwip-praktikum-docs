@@ -8,6 +8,12 @@
     Ohne Internet am Board (oder zum Testen vorab) geht alles bis auf DNS auch
     in **S1** mit dem lokalen Wetter-Testserver.
 
+!!! warning "Erst implementieren, dann messen"
+    Ohne eure Implementierung bricht `lab 10 get` mit „Argument ungueltig“ oder
+    „noch nicht implementiert (TODO L10)“ ab.
+    Das ist kein Fehler des Boards: erst die Firmware-Aufgabe implementieren,
+    Host-Tests grün, dann flashen (Terminal meldet `Flash written and verified`).
+
 --8<-- "konventionen.md"
 
 Ein Browser tippt man nicht in eine Zeile, aber ein Wetterabruf passt in eine:
@@ -112,10 +118,91 @@ Nach dem Versuch könnt ihr …
 
     `/v1/forecast?latitude=53.55&longitude=9.99&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code`
 
+## Experiment (Firmware-Aufgabe)
+
+Dateien in eurem Fork (Branch `praktikum/start`):
+
+- [`apps/rnlab/src/l10_http_wetter_1_logic.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l10_http_wetter_1_logic.c)
+  mit [`l10_http_wetter_1_logic.h`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l10_http_wetter_1_logic.h):
+  reine Logik, **hier arbeitet ihr zuerst** (`TODO(L10)`). Der Header
+  beschreibt jede Funktion genau.
+- [`apps/rnlab/src/l10_http_wetter_1.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l10_http_wetter_1.c):
+  der lwIP-Client mit `lab 10`. Vier `TODO(L10)` für die lwIP-Aufrufe, der
+  Rest (Zustände, Zeitmessung, Timeout, Ausgabe) ist fertig.
+  [`l10_http_wetter_1.h`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l10_http_wetter_1.h)
+  ist seine Schnittstelle – die Wetter-App in Versuch 11 benutzt denselben
+  Client.
+- [`tests/unit/test_rnlab_l10.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/tests/unit/test_rnlab_l10.c):
+  die Spezifikation. Die Antworten darin sind echte Aufzeichnungen von
+  open-meteo; jede wird an **jeder** Stelle in zwei Teile und in Stücke von
+  1, 2, 3, 7, … Byte geschnitten.
+
+!!! info "Pflicht und Vertiefung"
+    Verlangt ist ein **HTTP/1.0**-Client: Statuszeile, Header mit
+    `Content-Length`, Body bis zum Verbindungsende, und JSON-Zahlen aus
+    `current` (inkl. der `current_units`-Falle und abgeschnittener Eingaben).
+    Dafür müssen die **34 Tests ohne `_v_`** im Namen grün werden. Die
+    **12 Tests `test_v_…`** gehören zur Vertiefung: `chunked` mit Trailern,
+    `1xx`/`204` (alles HTTP/1.1) sowie JSON-Escapes, Exponenten und kaputte
+    Zahlen. **Pflichtteil ≈ 3 h:** die Funktionen für die Tests ohne `_v_`,
+    die vier lwIP-Stellen und die Messungen **A, B, C, E**. Messung D
+    (open-meteo über S2) gehört dazu, sobald S2 läuft; die Tests `test_v_…`
+    sind **Vertiefung (optional)**.
+
+| Funktion | Aufgabe |
+|---|---|
+| `size_t rnlab_http_build_get(out, size, host, port, path, http11)` | Anfrage wie oben; `:port` nur wenn ≠ 80; 0 bei zu kleinem Puffer oder unbrauchbarem Pfad (kein `/` am Anfang, Leer- oder Steuerzeichen – sonst könnte jemand eigene Header einschleusen) |
+| `size_t rnlab_http_feed(http, data, len)` | Zustandsautomat über die Antwort: Statuszeile prüfen, Header zeilenweise (Groß-/Kleinschreibung egal) auf `Content-Length` und `Transfer-Encoding` untersuchen, Body an `on_body` weitergeben, `chunked` dekodieren. Zählt Header-, Leitungs- und Nutzbytes |
+| `void rnlab_http_finish(http)` | Server hat geschlossen: Body ohne Länge ist jetzt fertig, alles andere Unfertige ist „abgeschnitten“ |
+| `void rnlab_json_feed(json, data, len)` | Zeichenweiser JSON-Lexer; merkt sich nur die Zahlen, die **direkt** im Objekt `current` stehen, als Wert × 1000 |
+| `bool rnlab_json_number(json, key, &milli)` | einen gemerkten Wert nachschlagen |
+
+Im Board-Teil:
+
+| Stelle in `l10_http_wetter_1.c` | Aufgabe |
+|---|---|
+| `rnlab_l10_fetch_start()`, DNS-Zweig | `dns_gethostbyname()` mit den drei Ergebnissen `ERR_OK` (Cache), `ERR_INPROGRESS`, Fehler |
+| `l10_dns_found()` | Callback: Adresse → `l10_connect()`, `NULL` → DNS-Fehler |
+| `l10_connected()` | Anfrage mit `tcp_write(…, TCP_WRITE_FLAG_COPY)` + `tcp_output()` senden |
+| `l10_recv()` | die pbuf-**Kette** an den Parser geben, `tcp_recved()`, `pbuf_free()`; ist die Antwort fertig, auswerten und schließen |
+
+**Die Fallen im JSON.** Die Antwort enthält jeden Schlüssel zweimal:
+
+```json
+"current_units":{"temperature_2m":"°C", …},"current":{"time":"2026-09-28T12:30","interval":900,"temperature_2m":23.2, …}
+```
+
+Wer einfach nach `"temperature_2m":` sucht, findet zuerst die Einheit. Die
+Tests prüfen außerdem Schlüssel gleichen Namens in verschachtelten Objekten,
+den Text `"current"` als Wert und abgeschnittene Eingaben: `…"wind_speed_10m":4` am Ende darf **nicht** als 4 gemeldet werden –
+es könnte `4.1` gewesen sein. Escapes in Schlüsseln (`\"`, `\u0074`) und
+Exponenten (`1e3`) prüft erst die Vertiefung.
+
+```bash
+cmake --build build/host
+ctest --test-dir build/host -L '^rnlab-L10$' --output-on-failure            # Pflicht
+ctest --test-dir build/host -L rnlab-L10-vertiefung --output-on-failure     # Vertiefung (optional)
+```
+
+Das Muster ist ein regulärer Ausdruck: ohne `^…$` passt `rnlab-L10` auch auf
+`rnlab-L10-vertiefung`.
+
+Ohne Implementierung bricht `lab 10 get` mit „Argument ungueltig“ ab, weil
+`rnlab_http_build_get()` noch 0 liefert. Ist die Funktion fertig, baut das
+Board mit einer IP-Adresse als Ziel schon die TCP-Verbindung auf und meldet
+dann „noch nicht implementiert (TODO L10)“ – bis die lwIP-Stellen fertig sind.
+
+??? example "Vertiefung (optional): der Parser als Zustandsautomat"
+    Zeichnet den Automaten von `rnlab_http_feed()` (Zustände
+    `rnlab_http_state_t`) mit den Übergängen, bevor ihr ihn programmiert. Wo
+    braucht ihr einen Zeilenpuffer, wo reicht ein Zähler? Warum muss der
+    Automat bei `Content-Length` weniger Bytes verbrauchen können, als ihm
+    übergeben werden?
+
 ## Versuchsablauf
 
 1. Firmware-Aufgabe umsetzen, Pflicht-Tests grün
-   (`ctest --test-dir build/host -L '^rnlab-L10$'`), flashen.
+   (`ctest --test-dir build/host -L '^rnlab-L10$'`), flashen (siehe oben).
 2. **Erwartungswerte** notieren (nächster Abschnitt).
 3. **A – Referenz am Rechner** (derselbe Abruf, den das Board macht). A misst
    nur euren Rechner und darf deshalb vor dem Erwartungswert laufen – dessen
@@ -201,87 +288,6 @@ Berechnet
   Ethernet 18 B je Segment, Handshake und Abbau als Frames ohne Nutzdaten zu
   64 B, DNS-Anfrage und -Antwort zusammen ≈ 200 B) und daraus die Effizienz
   Nutzdaten (die vier Zahlen, etwa 20 B) / Kabelbytes.
-
-## Experiment (Firmware-Aufgabe)
-
-Dateien in eurem Fork (Branch `praktikum/start`):
-
-- [`apps/rnlab/src/l10_http_wetter_1_logic.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l10_http_wetter_1_logic.c)
-  mit [`l10_http_wetter_1_logic.h`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l10_http_wetter_1_logic.h):
-  reine Logik, **hier arbeitet ihr zuerst** (`TODO(L10)`). Der Header
-  beschreibt jede Funktion genau.
-- [`apps/rnlab/src/l10_http_wetter_1.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l10_http_wetter_1.c):
-  der lwIP-Client mit `lab 10`. Vier `TODO(L10)` für die lwIP-Aufrufe, der
-  Rest (Zustände, Zeitmessung, Timeout, Ausgabe) ist fertig.
-  [`l10_http_wetter_1.h`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l10_http_wetter_1.h)
-  ist seine Schnittstelle – die Wetter-App in Versuch 11 benutzt denselben
-  Client.
-- [`tests/unit/test_rnlab_l10.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/tests/unit/test_rnlab_l10.c):
-  die Spezifikation. Die Antworten darin sind echte Aufzeichnungen von
-  open-meteo; jede wird an **jeder** Stelle in zwei Teile und in Stücke von
-  1, 2, 3, 7, … Byte geschnitten.
-
-!!! info "Pflicht und Vertiefung"
-    Verlangt ist ein **HTTP/1.0**-Client: Statuszeile, Header mit
-    `Content-Length`, Body bis zum Verbindungsende, und JSON-Zahlen aus
-    `current` (inkl. der `current_units`-Falle und abgeschnittener Eingaben).
-    Dafür müssen die **34 Tests ohne `_v_`** im Namen grün werden. Die
-    **12 Tests `test_v_…`** gehören zur Vertiefung: `chunked` mit Trailern,
-    `1xx`/`204` (alles HTTP/1.1) sowie JSON-Escapes, Exponenten und kaputte
-    Zahlen. **Pflichtteil ≈ 3 h:** die Funktionen für die Tests ohne `_v_`,
-    die vier lwIP-Stellen und die Messungen **A, B, C, E**. Messung D
-    (open-meteo über S2) gehört dazu, sobald S2 läuft; die Tests `test_v_…`
-    sind **Vertiefung (optional)**.
-
-| Funktion | Aufgabe |
-|---|---|
-| `size_t rnlab_http_build_get(out, size, host, port, path, http11)` | Anfrage wie oben; `:port` nur wenn ≠ 80; 0 bei zu kleinem Puffer oder unbrauchbarem Pfad (kein `/` am Anfang, Leer- oder Steuerzeichen – sonst könnte jemand eigene Header einschleusen) |
-| `size_t rnlab_http_feed(http, data, len)` | Zustandsautomat über die Antwort: Statuszeile prüfen, Header zeilenweise (Groß-/Kleinschreibung egal) auf `Content-Length` und `Transfer-Encoding` untersuchen, Body an `on_body` weitergeben, `chunked` dekodieren. Zählt Header-, Leitungs- und Nutzbytes |
-| `void rnlab_http_finish(http)` | Server hat geschlossen: Body ohne Länge ist jetzt fertig, alles andere Unfertige ist „abgeschnitten“ |
-| `void rnlab_json_feed(json, data, len)` | Zeichenweiser JSON-Lexer; merkt sich nur die Zahlen, die **direkt** im Objekt `current` stehen, als Wert × 1000 |
-| `bool rnlab_json_number(json, key, &milli)` | einen gemerkten Wert nachschlagen |
-
-Im Board-Teil:
-
-| Stelle in `l10_http_wetter_1.c` | Aufgabe |
-|---|---|
-| `rnlab_l10_fetch_start()`, DNS-Zweig | `dns_gethostbyname()` mit den drei Ergebnissen `ERR_OK` (Cache), `ERR_INPROGRESS`, Fehler |
-| `l10_dns_found()` | Callback: Adresse → `l10_connect()`, `NULL` → DNS-Fehler |
-| `l10_connected()` | Anfrage mit `tcp_write(…, TCP_WRITE_FLAG_COPY)` + `tcp_output()` senden |
-| `l10_recv()` | die pbuf-**Kette** an den Parser geben, `tcp_recved()`, `pbuf_free()`; ist die Antwort fertig, auswerten und schließen |
-
-**Die Fallen im JSON.** Die Antwort enthält jeden Schlüssel zweimal:
-
-```json
-"current_units":{"temperature_2m":"°C", …},"current":{"time":"2026-09-28T12:30","interval":900,"temperature_2m":23.2, …}
-```
-
-Wer einfach nach `"temperature_2m":` sucht, findet zuerst die Einheit. Die
-Tests prüfen außerdem Schlüssel gleichen Namens in verschachtelten Objekten,
-den Text `"current"` als Wert und abgeschnittene Eingaben: `…"wind_speed_10m":4` am Ende darf **nicht** als 4 gemeldet werden –
-es könnte `4.1` gewesen sein. Escapes in Schlüsseln (`\"`, `\u0074`) und
-Exponenten (`1e3`) prüft erst die Vertiefung.
-
-```bash
-cmake --build build/host
-ctest --test-dir build/host -L '^rnlab-L10$' --output-on-failure            # Pflicht
-ctest --test-dir build/host -L rnlab-L10-vertiefung --output-on-failure     # Vertiefung (optional)
-```
-
-Das Muster ist ein regulärer Ausdruck: ohne `^…$` passt `rnlab-L10` auch auf
-`rnlab-L10-vertiefung`.
-
-Ohne Implementierung bricht `lab 10 get` mit „Argument ungueltig“ ab, weil
-`rnlab_http_build_get()` noch 0 liefert. Ist die Funktion fertig, baut das
-Board mit einer IP-Adresse als Ziel schon die TCP-Verbindung auf und meldet
-dann „noch nicht implementiert (TODO L10)“ – bis die lwIP-Stellen fertig sind.
-
-??? example "Vertiefung (optional): der Parser als Zustandsautomat"
-    Zeichnet den Automaten von `rnlab_http_feed()` (Zustände
-    `rnlab_http_state_t`) mit den Übergängen, bevor ihr ihn programmiert. Wo
-    braucht ihr einen Zeilenpuffer, wo reicht ein Zähler? Warum muss der
-    Automat bei `Content-Length` weniger Bytes verbrauchen können, als ihm
-    übergeben werden?
 
 ## Auswertung
 

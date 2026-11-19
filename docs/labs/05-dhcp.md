@@ -6,6 +6,13 @@
     Dieser Versuch läuft im Netz-Setup **S2 – Internetfreigabe**
     (siehe [Netz-Setup](../reference/netz-setup.md#s2-internetfreigabe)).
 
+!!! warning "Erst implementieren, dann messen"
+    Ohne eure Implementierung holt sich das Board seine Adresse trotzdem
+    (DHCP läuft in lwIP), aber `lab 05 log` zeigt weder Nachrichtentyp noch
+    Adresse, und `lab 05 dhcp` meldet „noch kein ACK erkannt“ und keine T1/T2.
+    Das ist kein Fehler des Boards: erst die Firmware-Aufgabe implementieren,
+    Host-Tests grün, dann flashen (Terminal meldet `Flash written and verified`).
+
 --8<-- "konventionen.md"
 
 Bisher hatte das Board eine feste Adresse. Ab heute holt es sie sich selbst:
@@ -90,10 +97,55 @@ Nach dem Versuch könnt ihr …
     Adressen und Zeitstempel weichen deshalb von allen Beispielen auf dieser
     Seite ab.
 
+## Experiment (Firmware-Aufgabe)
+
+Dateien in eurem Fork (Branch `praktikum/start`, gleiche Pfade im eigenen Repository; die Links zeigen auf die Vorlage):
+
+- [`apps/rnlab/src/l05_dhcp_logic.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l05_dhcp_logic.c)
+  mit [`l05_dhcp_logic.h`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l05_dhcp_logic.h):
+  reine Logik, **hier arbeitet ihr** (`TODO(L05)`). Der Kopfkommentar der
+  `.h` zeigt den Aufbau einer DHCP-Nachricht mit allen Offsets.
+- [`apps/rnlab/src/l05_dhcp.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l05_dhcp.c):
+  Hooks und Befehle, fertig.
+- [`tests/unit/test_rnlab_l05.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/tests/unit/test_rnlab_l05.c):
+  die Spezifikation. Die Frames darin sind echte Mitschnitte vom Laborplatz.
+
+| Funktion | Aufgabe |
+|---|---|
+| `bool rnlab_l05_parse(const uint8_t* msg, size_t len, rnlab_dhcp_msg_t* out)` | DHCP-Nachricht (UDP-Nutzdaten ab `op`) prüfen und zerlegen: Mindestlänge 240 B, `op` 1/2, Magic Cookie `99.130.83.99`, dann die Optionsliste (Code, Länge, Wert; 0 = Pad, 255 = Ende). Übernehmen: 53, 51, 58, 59, 1, 3, 6, 50, 54. Unbekannte Optionen überspringen, unmögliche Längen und Optionen über das Ende hinaus → `false`; ohne Option 53 ist es kein DHCP → `false`. |
+| `bool rnlab_l05_timers(const rnlab_dhcp_msg_t* msg, uint32_t* t1_s, uint32_t* t2_s)` | T1/T2 nach RFC 2131 §4.4.5: Optionen 58/59, sonst ½ und ⅞ der Lease (abgerundet); unendliche Lease (`0xFFFFFFFF`) → beide unendlich; ohne Lease → `false`. |
+
+Fertig vorgegeben sind `rnlab_l05_find_dhcp()` (findet die DHCP-Nachricht
+in einem Ethernet-Frame) und `rnlab_l05_type_name()`.
+
+**So kommen die Nachrichten zu eurem Parser.** Der Netztreiber ruft für jeden
+empfangenen und jeden gesendeten Frame die Hooks `rnlab_l05_hook_rx_frame()`
+und `rnlab_l05_hook_tx_frame()` auf. Sie stempeln die Zeit
+(`cads_hal_ticks_ms()`), suchen die DHCP-Nachricht und geben sie an
+`rnlab_l05_parse()`. Die `xid` liest der Hook selbst, deshalb seht ihr die
+Wiederholungen schon vor eurer Implementierung. Die Typen (`?`) und
+`lab 05 dhcp` → „Eigener Parser“ brauchen euren Code. `lab 05 ignore` sitzt im
+Hook `rnlab_l05_hook_rx_drop()`: Er verwirft Server-Antworten (`op` 2) nach
+IP-Absender, bevor lwIP sie sieht.
+
+```bash
+cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L05$' --output-on-failure
+```
+
+!!! warning "Die Bytes kommen aus dem Netz"
+    Jeder Zugriff auf `msg[i]` braucht vorher die Prüfung `i < len`. Eine
+    Option, die „4 Byte“ behauptet, aber hinter dem Ende liegt, darf euren
+    Parser nicht aus dem Puffer lesen lassen: So entstehen echte
+    Sicherheitslücken in DHCP-Clients. Die Tests enthalten solche Nachrichten.
+
+??? example "Vertiefung (optional): 7/8 in 32 Bit"
+    lwIP rechnet T2 als `(offered_t0_lease * 7U) / 8U` in 32 Bit. Ab welcher
+    Lease läuft das über, und welches T2 käme dann heraus? Der Test
+    `test_timers_large_lease_does_not_overflow` verlangt es richtig.
+
 ## Versuchsablauf
 
-1. Firmware-Aufgabe umsetzen, Host-Tests grün, flashen (Abschnitt
-   *Experiment*).
+1. Firmware-Aufgabe umsetzen, Host-Tests grün, flashen (siehe oben).
 2. **Erwartungswerte** notieren (nächster Abschnitt).
 3. **A – DORA.** Wireshark starten, dann auf der Konsole:
 
@@ -172,52 +224,6 @@ lwIP rechnet mit `DHCP_REQUEST_BACKOFF_SEQUENCE(tries)` in derselben Datei.
 Sagt die Abstände der ersten sieben DISCOVER voraus. Beachtet: Der
 Feintimer von lwIP tickt alle `DHCP_FINE_TIMER_MSECS`. Was bedeutet das für
 den ersten Abstand?
-
-## Experiment (Firmware-Aufgabe)
-
-Dateien in eurem Fork (Branch `praktikum/start`, gleiche Pfade im eigenen Repository; die Links zeigen auf die Vorlage):
-
-- [`apps/rnlab/src/l05_dhcp_logic.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l05_dhcp_logic.c)
-  mit [`l05_dhcp_logic.h`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l05_dhcp_logic.h):
-  reine Logik, **hier arbeitet ihr** (`TODO(L05)`). Der Kopfkommentar der
-  `.h` zeigt den Aufbau einer DHCP-Nachricht mit allen Offsets.
-- [`apps/rnlab/src/l05_dhcp.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l05_dhcp.c):
-  Hooks und Befehle, fertig.
-- [`tests/unit/test_rnlab_l05.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/tests/unit/test_rnlab_l05.c):
-  die Spezifikation. Die Frames darin sind echte Mitschnitte vom Laborplatz.
-
-| Funktion | Aufgabe |
-|---|---|
-| `bool rnlab_l05_parse(const uint8_t* msg, size_t len, rnlab_dhcp_msg_t* out)` | DHCP-Nachricht (UDP-Nutzdaten ab `op`) prüfen und zerlegen: Mindestlänge 240 B, `op` 1/2, Magic Cookie `99.130.83.99`, dann die Optionsliste (Code, Länge, Wert; 0 = Pad, 255 = Ende). Übernehmen: 53, 51, 58, 59, 1, 3, 6, 50, 54. Unbekannte Optionen überspringen, unmögliche Längen und Optionen über das Ende hinaus → `false`; ohne Option 53 ist es kein DHCP → `false`. |
-| `bool rnlab_l05_timers(const rnlab_dhcp_msg_t* msg, uint32_t* t1_s, uint32_t* t2_s)` | T1/T2 nach RFC 2131 §4.4.5: Optionen 58/59, sonst ½ und ⅞ der Lease (abgerundet); unendliche Lease (`0xFFFFFFFF`) → beide unendlich; ohne Lease → `false`. |
-
-Fertig vorgegeben sind `rnlab_l05_find_dhcp()` (findet die DHCP-Nachricht
-in einem Ethernet-Frame) und `rnlab_l05_type_name()`.
-
-**So kommen die Nachrichten zu eurem Parser.** Der Netztreiber ruft für jeden
-empfangenen und jeden gesendeten Frame die Hooks `rnlab_l05_hook_rx_frame()`
-und `rnlab_l05_hook_tx_frame()` auf. Sie stempeln die Zeit
-(`cads_hal_ticks_ms()`), suchen die DHCP-Nachricht und geben sie an
-`rnlab_l05_parse()`. Die `xid` liest der Hook selbst, deshalb seht ihr die
-Wiederholungen schon vor eurer Implementierung. Die Typen (`?`) und
-`lab 05 dhcp` → „Eigener Parser“ brauchen euren Code. `lab 05 ignore` sitzt im
-Hook `rnlab_l05_hook_rx_drop()`: Er verwirft Server-Antworten (`op` 2) nach
-IP-Absender, bevor lwIP sie sieht.
-
-```bash
-cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L05$' --output-on-failure
-```
-
-!!! warning "Die Bytes kommen aus dem Netz"
-    Jeder Zugriff auf `msg[i]` braucht vorher die Prüfung `i < len`. Eine
-    Option, die „4 Byte“ behauptet, aber hinter dem Ende liegt, darf euren
-    Parser nicht aus dem Puffer lesen lassen: So entstehen echte
-    Sicherheitslücken in DHCP-Clients. Die Tests enthalten solche Nachrichten.
-
-??? example "Vertiefung (optional): 7/8 in 32 Bit"
-    lwIP rechnet T2 als `(offered_t0_lease * 7U) / 8U` in 32 Bit. Ab welcher
-    Lease läuft das über, und welches T2 käme dann heraus? Der Test
-    `test_timers_large_lease_does_not_overflow` verlangt es richtig.
 
 ## Auswertung
 
