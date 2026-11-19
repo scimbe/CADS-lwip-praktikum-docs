@@ -6,6 +6,12 @@
     Dieser Versuch läuft im Netz-Setup **S1 – statische Adresse**
     (siehe [Netz-Setup](../reference/netz-setup.md#s1-statische-adresse)).
 
+!!! warning "Erst implementieren, dann messen"
+    Ohne eure Implementierung lehnt `lab 03 netmask` jede Maske ab und
+    `lab 03 show` zeigt `/?` (Netz und Broadcast 0.0.0.0). Das ist kein Fehler
+    des Boards: erst die Firmware-Aufgabe implementieren, Host-Tests grün,
+    dann flashen (Terminal meldet `Flash written and verified`).
+
 --8<-- "konventionen.md"
 
 Ein Host entscheidet bei **jedem** Paket, das er senden will, anhand seiner
@@ -62,9 +68,54 @@ in seinem eigenen Subnetz liegt, an seinen Router, das **Gateway**.
   [serielle Konsole](../reference/serielle-konsole.md). Haltet die serielle
   Konsole bereit: Nicht jede Maske lässt die Telnet-Verbindung bestehen.
 
+## Experiment (Firmware-Aufgabe)
+
+Dateien in eurem Fork (Branch `praktikum/start`):
+
+- [`apps/rnlab/src/l03_ipv4_subnetting_logic.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l03_ipv4_subnetting_logic.c)
+  mit Header [`l03_ipv4_subnetting_logic.h`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l03_ipv4_subnetting_logic.h):
+  reine Logik, **hier arbeitet ihr** (alle Stellen `TODO(L03)`).
+- [`apps/rnlab/src/l03_ipv4_subnetting.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l03_ipv4_subnetting.c):
+  Board-Integration (Hook, Befehle), fertig. Lesen lohnt sich.
+- [`tests/unit/test_rnlab_l03.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/tests/unit/test_rnlab_l03.c):
+  die Spezifikation als Unity-Tests.
+
+Alle Adressen sind `uint32_t` in **Host-Byte-Reihenfolge**
+(`192.168.33.99` = `0xC0A82163`, `/24` = `0xFFFFFF00`).
+
+| Funktion | Aufgabe |
+|---|---|
+| `bool rnlab_l03_mask_valid(uint32_t mask)` | „erst Einsen, dann nur Nullen“? (`0.0.0.0` und `255.255.255.255` gültig) |
+| `int rnlab_l03_mask_to_prefix(uint32_t mask)` | Präfixlänge 0–32, `-1` bei ungültiger Maske |
+| `uint32_t rnlab_l03_prefix_to_mask(unsigned prefix)` | `/24` → `0xFFFFFF00`; `0` für prefix > 32. Achtung: `x << 32` ist in C undefiniert. |
+| `uint32_t rnlab_l03_network(ip, mask)` / `rnlab_l03_broadcast(ip, mask)` | Host-Bits löschen bzw. setzen |
+| `bool rnlab_same_subnet(ip_a, ip_b, mask)` | gleiche Netz-ID? |
+| `rnlab_l03_classify_dst(dst, own_ip, mask)` | eigene Adresse → Limited Broadcast `255.255.255.255` → Multicast `224.0.0.0/4` → gerichteter Broadcast (nicht bei /31, /32) → sonst `OTHER` |
+| `uint32_t rnlab_l03_next_hop(own_ip, mask, gateway, dst)` | `dst` selbst, wenn im Netz (oder `255.255.255.255`), sonst `gateway` (0 = keins) |
+
+So kommt die Logik aufs Board: lwIP ruft über `LWIP_HOOK_IP4_INPUT` für jedes
+empfangene IPv4-Paket `rnlab_l03_hook_ip4_input(p, inp)` auf, **bevor** es den
+Header selbst prüft. Der Hook liest Quell- und Zieladresse, zählt nach
+`classify_dst` × `same_subnet(Quelle)` und gibt `0` zurück („weiter an lwIP“).
+Bei aktivem Filter und Quelle außerhalb des Präfixes gibt er `1` zurück und
+gibt den Puffer selbst frei (`pbuf_free`), dann sieht lwIP das Paket nie.
+
+```bash
+cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L03$' --output-on-failure
+```
+
+Ohne Implementierung sind die Tests rot und das Board bleibt benutzbar:
+`lab 03 netmask` lehnt jede Maske ab, der Filter lässt sich nicht einschalten.
+Bauen und flashen wie in [Firmware-Labor-Image](../reference/firmware-lab-image.md#bauen-testen-flashen).
+
+??? example "Vertiefung (optional): Warum `~mask`?"
+    Das Komplement einer gültigen Maske ist `0…01…1 = 2^k − 1`. Addiert man 1,
+    läuft der Übertrag durch alle Einsen und es bleibt kein gemeinsames Bit
+    übrig. Findet ihr damit einen Einzeiler ohne Schleife?
+
 ## Versuchsablauf
 
-1. Firmware-Aufgabe umsetzen (siehe unten), Host-Tests grün, flashen.
+1. Firmware-Aufgabe umsetzen (siehe oben), Host-Tests grün, flashen.
 2. `lab 03 help` und `lab 03 show` ausführen:
 
     ```text
@@ -145,51 +196,6 @@ in dem `192.168.33.1` nicht existiert.
     `.99`, denn für ihn liegt `.99` in seinem `/24`. Das Board nimmt jedes Paket
     an seine eigene Adresse an, egal aus welchem Netz es kommt. Wann scheitert
     dann trotzdem der Ping, und in welcher Richtung?
-
-## Experiment (Firmware-Aufgabe)
-
-Dateien in eurem Fork (Branch `praktikum/start`):
-
-- [`apps/rnlab/src/l03_ipv4_subnetting_logic.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l03_ipv4_subnetting_logic.c)
-  mit Header [`l03_ipv4_subnetting_logic.h`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l03_ipv4_subnetting_logic.h):
-  reine Logik, **hier arbeitet ihr** (alle Stellen `TODO(L03)`).
-- [`apps/rnlab/src/l03_ipv4_subnetting.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/apps/rnlab/src/l03_ipv4_subnetting.c):
-  Board-Integration (Hook, Befehle), fertig. Lesen lohnt sich.
-- [`tests/unit/test_rnlab_l03.c`](https://github.com/scimbe/cads-zero-firmware/blob/praktikum/start/tests/unit/test_rnlab_l03.c):
-  die Spezifikation als Unity-Tests.
-
-Alle Adressen sind `uint32_t` in **Host-Byte-Reihenfolge**
-(`192.168.33.99` = `0xC0A82163`, `/24` = `0xFFFFFF00`).
-
-| Funktion | Aufgabe |
-|---|---|
-| `bool rnlab_l03_mask_valid(uint32_t mask)` | „erst Einsen, dann nur Nullen“? (`0.0.0.0` und `255.255.255.255` gültig) |
-| `int rnlab_l03_mask_to_prefix(uint32_t mask)` | Präfixlänge 0–32, `-1` bei ungültiger Maske |
-| `uint32_t rnlab_l03_prefix_to_mask(unsigned prefix)` | `/24` → `0xFFFFFF00`; `0` für prefix > 32. Achtung: `x << 32` ist in C undefiniert. |
-| `uint32_t rnlab_l03_network(ip, mask)` / `rnlab_l03_broadcast(ip, mask)` | Host-Bits löschen bzw. setzen |
-| `bool rnlab_same_subnet(ip_a, ip_b, mask)` | gleiche Netz-ID? |
-| `rnlab_l03_classify_dst(dst, own_ip, mask)` | eigene Adresse → Limited Broadcast `255.255.255.255` → Multicast `224.0.0.0/4` → gerichteter Broadcast (nicht bei /31, /32) → sonst `OTHER` |
-| `uint32_t rnlab_l03_next_hop(own_ip, mask, gateway, dst)` | `dst` selbst, wenn im Netz (oder `255.255.255.255`), sonst `gateway` (0 = keins) |
-
-So kommt die Logik aufs Board: lwIP ruft über `LWIP_HOOK_IP4_INPUT` für jedes
-empfangene IPv4-Paket `rnlab_l03_hook_ip4_input(p, inp)` auf, **bevor** es den
-Header selbst prüft. Der Hook liest Quell- und Zieladresse, zählt nach
-`classify_dst` × `same_subnet(Quelle)` und gibt `0` zurück („weiter an lwIP“).
-Bei aktivem Filter und Quelle außerhalb des Präfixes gibt er `1` zurück und
-gibt den Puffer selbst frei (`pbuf_free`), dann sieht lwIP das Paket nie.
-
-```bash
-cmake --preset host && cmake --build build/host && ctest --test-dir build/host -L '^rnlab-L03$' --output-on-failure
-```
-
-Ohne Implementierung sind die Tests rot und das Board bleibt benutzbar:
-`lab 03 netmask` lehnt jede Maske ab, der Filter lässt sich nicht einschalten.
-Bauen und flashen wie in [Firmware-Labor-Image](../reference/firmware-lab-image.md#bauen-testen-flashen).
-
-??? example "Vertiefung (optional): Warum `~mask`?"
-    Das Komplement einer gültigen Maske ist `0…01…1 = 2^k − 1`. Addiert man 1,
-    läuft der Übertrag durch alle Einsen und es bleibt kein gemeinsames Bit
-    übrig. Findet ihr damit einen Einzeiler ohne Schleife?
 
 ## Auswertung
 
