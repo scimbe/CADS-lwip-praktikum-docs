@@ -52,6 +52,15 @@ Nach dem Versuch könnt ihr …
   beweist deshalb nicht, dass ein Host nicht erreichbar ist. Das spielt ihr
   hier mit `lab 04 loss` nach.
 
+??? info "Deep Dive in die Aufgabe: Bezug zum Grundlagen-Praktikum"
+
+    `ping` und `traceroute` benutzt ihr in [Blatt 1 (Netzwerkgrundlagen und
+    Werkzeuge)](https://scimbe.github.io/CADS-praktikum-docs/labs/01-netzwerkgrundlagen-tools/) als Werkzeuge auf Linux-Rechnern; zur MTU kommt [Blatt 2 (Subnetting und
+    ARP)](https://scimbe.github.io/CADS-praktikum-docs/labs/02-subnetting-arp/) (Teil zu MTU
+    und Fragmentierung). Hier baut ihr die Echo-Antwort selbst nach, samt Prüfsumme, und
+    messt die RTT eines Systems, dessen Hauptschleife die Pakete abfragt, statt von einem
+    Betriebssystem geweckt zu werden.
+
 ## Versuchsaufbau
 
 ```

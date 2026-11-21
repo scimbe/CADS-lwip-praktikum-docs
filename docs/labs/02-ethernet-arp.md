@@ -65,6 +65,14 @@ EtherType `0x0806`):
 | 18–23 | Target Hardware Address (THA) | Request: `00:00:00:00:00:00` |
 | 24–27 | Target Protocol Address (TPA) | gesuchte IP |
 
+??? info "Deep Dive in die Aufgabe: Bezug zum Grundlagen-Praktikum"
+
+    ARP kennt ihr aus [Blatt 2 (Subnetting und ARP)](https://scimbe.github.io/CADS-praktikum-docs/labs/02-subnetting-arp/): Dort löst ihr Adressen im Mitschnitt auf und
+    seht, dass jeder Hop seine eigene Auflösung braucht. Die Schwäche, dass jeder antworten
+    kann, nutzt [Blatt 5 (ARP-Spoofing und DoS)](https://scimbe.github.io/CADS-praktikum-docs/labs/05-arp-spoofing-dos/) gezielt aus. Hier ist anders, dass ihr den ARP-Parser
+    selbst schreibt und die Cache-Lebensdauer von der Konfiguration des lwIP-Stacks (statt
+    der des Linux-Kernels) abhängt.
+
 ## Versuchsaufbau
 
 ```text

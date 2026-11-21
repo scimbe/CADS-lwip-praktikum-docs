@@ -67,6 +67,15 @@ Nach dem Versuch könnt ihr …
   Kleinstsegmente mit großem Header-Anteil. Beide Seiten vermeiden das
   (RFC 1122, 4.2.3.3 und 4.2.3.4).
 
+??? info "Deep Dive in die Aufgabe: Bezug zum Grundlagen-Praktikum"
+
+    TCP-Durchsatz und das Verhalten einer Verbindung unter Störungen messt ihr im
+    Grundlagen-Praktikum in [Blatt 4 (TCP, UDP und
+    Staukontrolle)](https://scimbe.github.io/CADS-praktikum-docs/labs/04-tcp-udp-congestion/), mit `iperf` und `ss`. Der Drei-Wege-Handshake taucht außerdem in [Blatt 5
+    (ARP-Spoofing und DoS)](https://scimbe.github.io/CADS-praktikum-docs/labs/05-arp-spoofing-dos/) auf, wo er angegriffen wird. Hier ist die Seite des Empfängers im Fokus:
+    Das Empfangsfenster ist in lwIP ein Wert, den die Konfiguration des Stacks festlegt, und
+    die Anwendung muss ihn mit `tcp_recved()` selbst wieder öffnen.
+
 ## Versuchsaufbau
 
 ```

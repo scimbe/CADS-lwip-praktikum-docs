@@ -59,6 +59,14 @@ Nach dem Versuch könnt ihr …
   optional erzeugen, `LWIP_TCP_SACK_OUT`, hier aus) – das wird hier
   sichtbar. Reno und Cubic sind Varianten.
 
+??? info "Deep Dive in die Aufgabe: Bezug zum Grundlagen-Praktikum"
+
+    Das Congestion Window beobachtet ihr im Grundlagen-Praktikum von außen: [Blatt 4 (TCP,
+    UDP und Staukontrolle)](https://scimbe.github.io/CADS-praktikum-docs/labs/04-tcp-udp-congestion/) liest `cwnd` mit `ss -ti` aus und vergleicht Reno mit Cubic. Hier
+    implementiert ihr die Reno-Zustandsmaschine selbst auf dem Board, auf einem Stack, der
+    als Sender keine SACK-Blöcke auswertet, und stellt die Trace dem erwarteten Sägezahn
+    gegenüber.
+
 ## Versuchsaufbau
 
 ```

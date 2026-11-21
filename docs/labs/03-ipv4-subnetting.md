@@ -50,6 +50,15 @@ Nach dem Versuch könnt ihr …
 Router (Vermittlungsknoten) verbinden Netze; ein Host schickt alles, was nicht
 in seinem eigenen Subnetz liegt, an seinen Router, das **Gateway**.
 
+??? info "Deep Dive in die Aufgabe: Bezug zum Grundlagen-Praktikum"
+
+    Adresse, Maske, Netz- und Broadcast-Adresse sowie die Entscheidung „direkt oder über das
+    Gateway“ rechnet und konfiguriert ihr im Grundlagen-Praktikum in [Blatt 2 (Subnetting
+    und ARP)](https://scimbe.github.io/CADS-praktikum-docs/labs/02-subnetting-arp/) auf
+    Linux-Rechnern mit `ip`. Hier steckt dieselbe Rechnung im eigenen Code auf dem Board:
+    Der lwIP-Stack kennt je Schnittstelle Adresse, Maske und Gateway, und ihr prüft sie
+    selbst im Eingangs-Hook.
+
 ## Versuchsaufbau
 
 ```

@@ -57,6 +57,14 @@ Nach dem Versuch könnt ihr …
 - Eure Internetfreigabe ist genau so eine Box: DHCP-Server (Versuch 05),
   **DNS-Weiterleiter** und **NAT-Router** in einem.
 
+??? info "Deep Dive in die Aufgabe: Bezug zum Grundlagen-Praktikum"
+
+    Den DNS-Aufbau (Header, Frage, Antwort mit TTL) betrachtet ihr im Grundlagen-Praktikum
+    mit `dig` und einem selbst gestarteten, lesbaren DNS-Server: [Blatt 1
+    (Netzwerkgrundlagen und Werkzeuge)](https://scimbe.github.io/CADS-praktikum-docs/labs/01-netzwerkgrundlagen-tools/), dritter Meilenstein. Hier ist die andere Seite
+    dran: Das Board ist der Stub-Resolver, ihr schreibt den Parser, und der Cache des lwIP-
+    Resolvers ist sehr klein. Zu NAT gibt es im Grundlagen-Praktikum kein eigenes Blatt.
+
 ## Versuchsaufbau
 
 ```

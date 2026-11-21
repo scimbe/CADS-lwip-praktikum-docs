@@ -62,6 +62,14 @@ Nach dem Versuch könnt ihr …
 - Eine **RESTful API** wie open-meteo liefert Daten statt Seiten (hier JSON);
   der Client ist ein Programm, kein Mensch.
 
+??? info "Deep Dive in die Aufgabe: Bezug zum Grundlagen-Praktikum"
+
+    HTTP von Hand, mit Anfrage- und Statuszeile, Headern und Leerzeile, übt ihr im
+    Grundlagen-Praktikum in [Blatt 7 (HTTP, REST und QUIC)](https://scimbe.github.io/CADS-praktikum-docs/labs/07-http-rest-quic/); DNS und die Werkzeuge dazu gehören zu [Blatt 1
+    (Netzwerkgrundlagen und Werkzeuge)](https://scimbe.github.io/CADS-praktikum-docs/labs/01-netzwerkgrundlagen-tools/). Dort sendet ihr die Anfragen mit Werkzeugen auf
+    Linux. Hier schreibt ihr den Client und einen Parser, der mit beliebig zerteilten TCP-
+    Daten zurechtkommt, auf dem Board.
+
 ## Versuchsaufbau
 
 ```

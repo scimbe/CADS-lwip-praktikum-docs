@@ -56,6 +56,13 @@ Nach dem Versuch könnt ihr …
   Abrufrate. open-meteo aktualisiert die Werte alle 15 min (`"interval":900`
   im JSON).
 
+??? info "Deep Dive in die Aufgabe: Bezug zum Grundlagen-Praktikum"
+
+    Das Abfragen einer REST-Schnittstelle, mit Abfrageparametern und JSON als Antwortformat,
+    kennt ihr aus [Blatt 7 (HTTP, REST und QUIC)](https://scimbe.github.io/CADS-praktikum-docs/labs/07-http-rest-quic/). Dort ruft ihr Ressourcen von Hand ab. Hier wird daraus
+    eine Anwendung auf dem Board, die periodisch abruft und Fehlerzustände unterscheiden
+    muss, auf einem System, das sich Netz und Anzeige teilt.
+
 ## Versuchsaufbau
 
 ```

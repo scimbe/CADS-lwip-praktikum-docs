@@ -69,6 +69,15 @@ Nach dem Versuch könnt ihr …
   Bitübertragungsschicht – sie tauchen in keinem Mitschnitt auf, belegen aber
   die Leitung.
 
+??? info "Deep Dive in die Aufgabe: Bezug zum Grundlagen-Praktikum"
+
+    Das Schichtenmodell, das ihr hier an einem einzelnen Frame Byte für Byte zerlegt, seht
+    ihr im Grundlagen-Praktikum in echtem, mit Wireshark aufgezeichnetem Verkehr: [Blatt 1
+    (Netzwerkgrundlagen und Werkzeuge)](https://scimbe.github.io/CADS-praktikum-docs/labs/01-netzwerkgrundlagen-tools/), erster Meilenstein. Dort ordnet ihr Pakete auf
+    einem Linux-Rechner den Schichten zu. Hier schreibt ihr den Dekoder selbst, und zwar auf
+    einem eingebetteten System ohne Betriebssystem, das die Header im Speicher des Boards
+    liest. Der Stack ist lwIP statt des Linux-Kernels.
+
 ## Versuchsaufbau
 
 ```text

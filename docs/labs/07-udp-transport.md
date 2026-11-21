@@ -51,6 +51,14 @@ Nach dem Versuch könnt ihr …
   sind, sieht nur, wer mitzählt. Das tut ihr hier auf Anwendungsebene, so wie
   RTP es mit seiner Sequenznummer tut.
 
+??? info "Deep Dive in die Aufgabe: Bezug zum Grundlagen-Praktikum"
+
+    UDP, die fehlenden Zusicherungen gegenüber IP und Paketverlust behandelt [Blatt 4 (TCP,
+    UDP und Staukontrolle)](https://scimbe.github.io/CADS-praktikum-docs/labs/04-tcp-udp-congestion/), dort mit `iperf` zwischen Linux-Rechnern; die Folgen einer zu kleinen MTU
+    für UDP zeigt derselbe Teil. Hier zählt ihr die Datagramme selbst auf Anwendungsebene
+    und führt den Verlust auf die Aufnahmekapazität eines Embedded-Empfängers (DMA-Ring,
+    Poll-Periode, Puffer-Pool) zurück.
+
 ## Versuchsaufbau
 
 ```
