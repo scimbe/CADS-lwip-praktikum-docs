@@ -1,5 +1,8 @@
 # lwIP-Praktikum auf cads-zero
 
+!!! info "Erweiterung der Grundlagen-Aufgaben"
+    Dieses Praktikum überträgt die Theorie aus den Grundlagen-Aufgaben in eine Anwendungsdomäne: eingebettete Systeme, hier ein Mikrocontroller-Board mit eigener Firmware und lwIP-Stack. Die Basis-Aufgaben zur Theorie findet ihr unter [Grundlagen-Aufgaben](https://scimbe.github.io/CADS-praktikum-docs/); bearbeitet sie zuerst bzw. begleitend.
+
 In diesem Praktikum baut ihr Netzwerkfunktionen selbst in die Firmware eines
 Mikrocontroller-Boards ein und prüft sie anschließend von eurem eigenen Rechner
 aus nach. Grundlage ist der TCP/IP-Stack [lwIP](https://savannah.nongnu.org/projects/lwip/)
